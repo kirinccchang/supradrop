@@ -221,6 +221,10 @@
     .all-clear p { font-size: 14px; color: var(--ok-text); font-weight: 500; }
     .all-clear .all-clear-sub { font-size: 12px; margin-top: 4px; opacity: 0.8; }
 
+    /* Preceding-footnote context block inside an issue card */
+    .issue-prev-ctx { padding: 0 14px 10px; }
+    .issue-ctx-label { padding: 6px 14px 2px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-faint); }
+
     /* Footnote browser */
     .fn-browser-item { padding: 8px 12px; border-bottom: 1px solid var(--divider); font-size: 12px; display: flex; gap: 10px; align-items: flex-start; }
     .fn-browser-item:last-child { border-bottom: none; }
@@ -399,16 +403,37 @@
                 <span class="issue-chevron" :class="expandedFn === fn.footnoteNum ? 'open' : ''">▶</span>
               </div>
               <div class="issue-body" x-show="expandedFn === fn.footnoteNum" x-transition>
+                <!-- Current footnote text -->
+                <div class="issue-ctx-label">This footnote</div>
                 <div class="issue-text-preview" x-html="highlightText(fn.text)"></div>
+
+                <!-- Problems list -->
                 <template x-for="prob in fn.problems" :key="prob.rule + prob.msg">
-                  <div class="issue-problem">
-                    <span class="issue-problem-icon" x-text="prob.type === 'error' ? '✕' : '⚠'"></span>
-                    <div>
-                      <div class="issue-problem-msg" x-text="prob.msg"></div>
-                      <div class="issue-problem-rule" x-text="prob.rule"></div>
+                  <div>
+                    <div class="issue-problem">
+                      <span class="issue-problem-icon" x-text="prob.type === 'error' ? '✕' : '⚠'"></span>
+                      <div>
+                        <div class="issue-problem-msg" x-text="prob.msg"></div>
+                        <div class="issue-problem-rule" x-text="prob.rule"></div>
+                      </div>
                     </div>
+                    <!-- Preceding footnote context (for ID_AMBIGUOUS) -->
+                    <template x-if="prob.prevFnText">
+                      <div class="issue-prev-ctx">
+                        <div class="issue-ctx-label" x-text="'Preceding footnote (' + prob.prevFnNum + ')'"></div>
+                        <div class="issue-text-preview" style="margin-top:4px;" x-html="highlightText(prob.prevFnText)"></div>
+                      </div>
+                    </template>
                   </div>
                 </template>
+
+                <!-- Dismiss -->
+                <div style="padding:8px 14px; display:flex; justify-content:flex-end; border-top:1px solid var(--divider);">
+                  <button class="btn-ghost" style="font-size:11px; color:var(--text-faint);"
+                          @click.stop="dismissIssue(fn.footnoteNum)">
+                    Mark as reviewed ✓
+                  </button>
+                </div>
               </div>
             </div>
           </template>
@@ -653,7 +678,9 @@ function app() {
           text += this.extractText(child);
         }
       }
-      return text.trim();
+      // Some Word footnote styles insert ". " (period-space) right after the
+      // footnote reference mark superscript. Strip that leading artifact.
+      return text.trim().replace(/^\.\s*/, '');
     },
 
     /* ── Citation validation ───────────────────────────────────────────── */
@@ -730,9 +757,11 @@ function app() {
             });
           } else if (prevAuth.isAmbiguous) {
             problems.push({
-              type: 'warning',
-              rule: 'ID_AMBIGUOUS',
-              msg:  `"Id." — the preceding footnote (${prevAuth.fnNum}) appears to cite multiple sources; Id. is ambiguous about which source it refers to.`,
+              type:       'warning',
+              rule:       'ID_AMBIGUOUS',
+              msg:        `"Id." — the preceding footnote (${prevAuth.fnNum}) appears to cite multiple sources; Id. is ambiguous about which source it refers to.`,
+              prevFnNum:  prevAuth.fnNum,
+              prevFnText: fnMap.get(prevAuth.fnNum)?.text || '',
             });
           }
         }
@@ -833,6 +862,11 @@ function app() {
 
     toggleFn(num) {
       this.expandedFn = this.expandedFn === num ? null : num;
+    },
+
+    dismissIssue(footnoteNum) {
+      this.issues = this.issues.filter(f => f.footnoteNum !== footnoteNum);
+      if (this.expandedFn === footnoteNum) this.expandedFn = null;
     },
 
     formatSize(bytes) {
