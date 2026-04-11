@@ -1094,9 +1094,11 @@ function app() {
         while ((uM = allUrlRe.exec(text)) !== null) {
           const url = uM[0].replace(/[.,;)'"]+$/, '');
           if (ARCHIVED_HOST.test(url)) continue; // this URL itself is archived
-          // Check if immediately followed by [https://archived-url]
-          const after = text.slice(uM.index + uM[0].length).trimStart();
-          if (/^\[https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i.test(after)) continue;
+          // Check if a bracketed archived URL appears before the next semicolon.
+          // Covers both "URL [archive]" and "URL (last visited …) [archive]".
+          const after = text.slice(uM.index + uM[0].length);
+          const upToNextCite = after.split(/\s*;\s*/)[0];
+          if (/\[https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i.test(upToNextCite)) continue;
           hasUnarchivedUrl = true;
           break;
         }
