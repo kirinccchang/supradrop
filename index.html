@@ -543,7 +543,14 @@
         <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>ID_NO_PRECEDING</strong> — <em>Id.</em> with no preceding citation to reference.</div>
         <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>ID_AMBIGUOUS</strong> — <em>Id.</em> following a footnote that appears to cite multiple sources; the referent is ambiguous.</div>
         <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>SEE_GEN_NO_PAREN</strong> — <em>See generally</em> without an explanatory parenthetical; Bluebook strongly prefers one (e.g., <em>(arguing that...)</em>).</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>CF_NO_PAREN</strong> — <em>Cf.</em> without an explanatory parenthetical; Bluebook R. 1.2 requires one.</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>BUT_CF_NO_PAREN</strong> — <em>But cf.</em> without an explanatory parenthetical; Bluebook R. 1.2 requires one.</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>COMPARE_WITH_NO_PAREN</strong> — <em>Compare...with...</em> without parentheticals on both sides; Bluebook R. 1.2 requires one per source.</div>
         <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>QUOTE_NO_PINCITE</strong> — Direct quote without an apparent pincite; Bluebook R. 3.2 requires a pincite for all quoted material.</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>SUPRA_WRONG_SOURCE_TYPE</strong> — <em>supra note N</em> where footnote N is a case, statute, or constitution; Bluebook R. 4.2 prohibits supra for primary sources.</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>ID_STALE</strong> — <em>Id.</em> used more than 5 footnotes after the source was cited; a short-form citation is clearer (Bluebook R. 4.1).</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>FOOTNOTE_NO_PERIOD</strong> — Footnote does not end with a period.</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — A <em>[hereinafter X]</em> shorthand is defined but never referenced in any subsequent footnote.</div>
       </div>
     </div>
   </div>
@@ -748,6 +755,28 @@ function app() {
       // { fnNum, isAmbiguous }
       let prevAuth = null;
 
+      // ── Pre-pass: collect hereinafter definitions and usages ───────────
+      // hereDefMap: term → fnNum where [hereinafter term] is defined
+      // hereUseSet: terms that actually appear in at least one other footnote
+      const hereDefMap = new Map();
+      const hereUseSet = new Set();
+      for (const { text: dText, num: dNum } of footnotes) {
+        const hRe = /\[hereinafter\s+([^\]]+)\]/gi;
+        let hm;
+        while ((hm = hRe.exec(dText)) !== null) {
+          const term = hm[1].trim();
+          if (!hereDefMap.has(term)) hereDefMap.set(term, dNum);
+        }
+      }
+      for (const [term, defFnNum] of hereDefMap) {
+        for (const { num: uNum, text: uText } of footnotes) {
+          if (uNum !== defFnNum && uText.includes(term)) {
+            hereUseSet.add(term);
+            break;
+          }
+        }
+      }
+
       for (const fn of footnotes) {
         const { num, text } = fn;
         const problems = [];
@@ -793,6 +822,24 @@ function app() {
                 rule: 'SUPRA_TO_SHORT_CITE',
                 msg:  `"${ref.fullMatch}" — footnote ${ref.refNum} itself begins with ${targetIsId ? 'Id.' : 'supra note'}, not a full citation. A supra must refer to a full-citation footnote.`,
               });
+            } else if (/\bv\.\s/.test(target.text)) {
+              problems.push({
+                type: 'warning',
+                rule: 'SUPRA_WRONG_SOURCE_TYPE',
+                msg:  `"${ref.fullMatch}" — Bluebook prohibits supra for cases; use a short-form case citation instead (R. 10.9, R. 4.2).`,
+              });
+            } else if (/\bU\.S\.C\.|§\s*\d|\bPub\.\s*L\./.test(target.text)) {
+              problems.push({
+                type: 'warning',
+                rule: 'SUPRA_WRONG_SOURCE_TYPE',
+                msg:  `"${ref.fullMatch}" — Bluebook prohibits supra for statutes; use the statutory short form instead (R. 12.10, R. 4.2).`,
+              });
+            } else if (/U\.S\.\s*Const\.|art\.\s+[IVX]+(?:\s|,|\.)/i.test(target.text)) {
+              problems.push({
+                type: 'warning',
+                rule: 'SUPRA_WRONG_SOURCE_TYPE',
+                msg:  `"${ref.fullMatch}" — Bluebook prohibits supra for constitutions; cite directly (R. 11, R. 4.2).`,
+              });
             } else {
               // Check for pincite: text after the match should have ", at N" or "at N"
               const afterMatch = text.slice(ref.matchEnd);
@@ -824,6 +871,77 @@ function app() {
               prevFnNum:  prevAuth.fnNum,
               prevFnText: fnMap.get(prevAuth.fnNum)?.text || '',
             });
+          }
+        }
+
+        // ── Id. chain staleness ───────────────────────────────────────────
+        // Bluebook R. 4.1: Id. becomes confusing when the source is too many
+        // footnotes back. Fire once per footnote (not per Id. occurrence).
+        if (idMatches.length > 0 && prevAuth !== null && !prevAuth.isAmbiguous
+            && (num - prevAuth.fnNum) > 5) {
+          problems.push({
+            type: 'warning',
+            rule: 'ID_STALE',
+            msg:  `"Id." — the source was first cited ${num - prevAuth.fnNum} footnotes ago (fn ${prevAuth.fnNum}); consider a short-form citation instead (Bluebook R. 4.1).`,
+          });
+        }
+
+        // ── Terminal period ───────────────────────────────────────────────
+        if (!/[.!?]['")]*$/.test(text.trim())) {
+          problems.push({
+            type: 'warning',
+            rule: 'FOOTNOTE_NO_PERIOD',
+            msg:  'Footnote does not end with a period.',
+          });
+        }
+
+        // ── Cf. without explanatory parenthetical ─────────────────────────
+        // "But cf." is a separate signal handled below.
+        if (/\bcf\./i.test(text) && !/\bbut\s+cf\./i.test(text)) {
+          if (!this._hasExplanatoryParen(text)) {
+            problems.push({
+              type: 'warning',
+              rule: 'CF_NO_PAREN',
+              msg:  '"Cf." always requires an explanatory parenthetical (Bluebook R. 1.2).',
+            });
+          }
+        }
+
+        // ── But cf. without explanatory parenthetical ─────────────────────
+        if (/\bbut\s+cf\./i.test(text)) {
+          if (!this._hasExplanatoryParen(text)) {
+            problems.push({
+              type: 'warning',
+              rule: 'BUT_CF_NO_PAREN',
+              msg:  '"But cf." always requires an explanatory parenthetical (Bluebook R. 1.2).',
+            });
+          }
+        }
+
+        // ── Compare...with... needs parentheticals on both sides ──────────
+        if (/\bcompare\b.+?\bwith\b/i.test(text)) {
+          if (this._countExplanatoryParens(text) < 2) {
+            problems.push({
+              type: 'warning',
+              rule: 'COMPARE_WITH_NO_PAREN',
+              msg:  '"Compare...with..." — both sides require explanatory parentheticals (Bluebook R. 1.2).',
+            });
+          }
+        }
+
+        // ── Hereinafter defined but never used ────────────────────────────
+        {
+          const hRe = /\[hereinafter\s+([^\]]+)\]/gi;
+          let hm;
+          while ((hm = hRe.exec(text)) !== null) {
+            const term = hm[1].trim();
+            if (!hereUseSet.has(term)) {
+              problems.push({
+                type: 'warning',
+                rule: 'HEREINAFTER_NEVER_USED',
+                msg:  `[hereinafter ${term}] is defined here but never used in any subsequent footnote.`,
+              });
+            }
           }
         }
 
@@ -941,6 +1059,12 @@ function app() {
      */
     _hasExplanatoryParen(text) {
       return /\(\s*(?:not|hold|find|argu|explain|discuss|stat|conclud|recogniz|describ|reject|suggest|show|consider|analyz|emphasiz|acknowledg|observ|review|address|introduc|establish|provid|contend|assert|propos|distinguish|compar|contrast|determin|defin|identif|requir|limit|restrict|permit|prohibit|allow|interpret|evaluat|indicat|demonstrat|highlight|confirm|affirm|cit|detail|exam|explor|apply)ing\b/i.test(text);
+    },
+
+    /** Count how many explanatory parentheticals (gerund-opener) appear in text. */
+    _countExplanatoryParens(text) {
+      const re = /\(\s*(?:not|hold|find|argu|explain|discuss|stat|conclud|recogniz|describ|reject|suggest|show|consider|analyz|emphasiz|acknowledg|observ|review|address|introduc|establish|provid|contend|assert|propos|distinguish|compar|contrast|determin|defin|identif|requir|limit|restrict|permit|prohibit|allow|interpret|evaluat|indicat|demonstrat|highlight|confirm|affirm|cit|detail|exam|explor|apply)ing\b/gi;
+      return (text.match(re) || []).length;
     },
 
     /** True if there is any semicolon outside parentheses (used by looksLikeOnlyId). */
