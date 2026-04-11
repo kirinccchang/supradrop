@@ -440,13 +440,13 @@
                     </template>
                     <template x-if="!fn.confirmed">
                       <span>
-                        <template x-if="fn.problems.filter(p => p.type === 'error').length > 0">
+                        <template x-if="fn.problems.filter(p => p.type === 'error' && fileEnabledRules(fo).has(p.rule)).length > 0">
                           <span class="badge badge-error" style="margin-right:6px;"
-                                x-text="fn.problems.filter(p=>p.type==='error').length + ' error' + (fn.problems.filter(p=>p.type==='error').length > 1 ? 's' : '')"></span>
+                                x-text="fn.problems.filter(p=>p.type==='error'&&fileEnabledRules(fo).has(p.rule)).length + ' error' + (fn.problems.filter(p=>p.type==='error'&&fileEnabledRules(fo).has(p.rule)).length > 1 ? 's' : '')"></span>
                         </template>
-                        <template x-if="fn.problems.filter(p => p.type === 'warning').length > 0">
+                        <template x-if="fn.problems.filter(p => p.type === 'warning' && fileEnabledRules(fo).has(p.rule)).length > 0">
                           <span class="badge badge-warning"
-                                x-text="fn.problems.filter(p=>p.type==='warning').length + ' warning' + (fn.problems.filter(p=>p.type==='warning').length > 1 ? 's' : '')"></span>
+                                x-text="fn.problems.filter(p=>p.type==='warning'&&fileEnabledRules(fo).has(p.rule)).length + ' warning' + (fn.problems.filter(p=>p.type==='warning'&&fileEnabledRules(fo).has(p.rule)).length > 1 ? 's' : '')"></span>
                         </template>
                       </span>
                     </template>
@@ -459,12 +459,12 @@
                   <div class="issue-text-preview" x-html="highlightText(fn.text)"></div>
 
                   <!-- Problems list -->
-                  <template x-for="prob in fn.problems.filter(p => fileEnabledRules(fo).has(p.rule))" :key="prob.rule + prob.msg">
+                  <template x-for="(prob, pi) in fn.problems.filter(p => fileEnabledRules(fo).has(p.rule))" :key="fn.footnoteNum + '-' + pi">
                     <div>
                       <div class="issue-problem">
                         <span class="issue-problem-icon" x-text="prob.type === 'error' ? '✕' : '⚠'"></span>
                         <div>
-                          <div class="issue-problem-msg" x-text="prob.msg"></div>
+                          <div class="issue-problem-msg" x-html="prob.msg"></div>
                           <div class="issue-problem-rule" x-text="prob.rule"></div>
                         </div>
                       </div>
@@ -961,7 +961,7 @@ function app() {
         const supraRe = /\bsupra\s+notes?\s+(\d+)/gi;
         let m;
         while ((m = supraRe.exec(text)) !== null) {
-          supraMatches.push({ refNum: parseInt(m[1], 10), fullMatch: m[0], matchEnd: m.index + m[0].length });
+          supraMatches.push({ refNum: parseInt(m[1], 10), fullMatch: m[0], matchStart: m.index, matchEnd: m.index + m[0].length });
         }
 
         // ── Find all Id. refs ────────────────────────────────────────────
@@ -996,7 +996,22 @@ function app() {
                 rule: 'SUPRA_TO_SHORT_CITE',
                 msg:  `"${ref.fullMatch}" — footnote ${ref.refNum} itself begins with ${targetIsId ? 'Id.' : 'supra note'}, not a full citation. A supra must refer to a full-citation footnote.`,
               });
-            } else if (/\bv\.\s/.test(target.text)) {
+            } else if ((() => {
+                // Narrow to the specific sub-citation this supra refers to.
+                // Extract the short-form label immediately before "supra note N":
+                // e.g. "Hendrix, supra note 3" → shortForm = "Hendrix"
+                const beforeSupra = text.slice(0, ref.matchStart);
+                const lastSemi = beforeSupra.lastIndexOf(';');
+                const rawShort = beforeSupra.slice(lastSemi + 1).trim().replace(/,\s*$/, '');
+                const searchKey = rawShort.split(/[\s,]+/)[0]; // first word
+                let targetSub = target.text;
+                if (searchKey && searchKey.length > 2) {
+                  const subCites = target.text.split(/\s*;\s*/);
+                  const match = subCites.find(s => s.includes(searchKey));
+                  if (match) targetSub = match;
+                }
+                return /\bv\.\s/.test(targetSub);
+              })()) {
               problems.push({
                 type: 'warning',
                 rule: 'SUPRA_WRONG_SOURCE_TYPE',
@@ -1070,18 +1085,27 @@ function app() {
         }
 
         // ── Unarchived URL (Bluebook R. 18.2) ───────────────────────────
-        // Any URL in a footnote should be a permanent/archived link.
-        const urlMatch = /https?:\/\/\S+/.exec(text);
-        if (urlMatch) {
-          const url = urlMatch[0].replace(/[.,;)\]'"]+$/, ''); // strip trailing punctuation
-          const isArchived = /^https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i.test(url);
-          if (!isArchived) {
-            problems.push({
-              type: 'warning',
-              rule: 'URL_NOT_ARCHIVED',
-              msg:  `Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). PermaDrop (permadrop.kirinchang.com) can help you create one.`,
-            });
-          }
+        // Bluebook pattern: original URL followed by [archived URL] in brackets.
+        // Flag only if a non-archived URL lacks a bracketed archived counterpart.
+        const ARCHIVED_HOST = /^https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i;
+        const allUrlRe = /https?:\/\/[^\s\]]+/g;
+        let hasUnarchivedUrl = false;
+        let uM;
+        while ((uM = allUrlRe.exec(text)) !== null) {
+          const url = uM[0].replace(/[.,;)'"]+$/, '');
+          if (ARCHIVED_HOST.test(url)) continue; // this URL itself is archived
+          // Check if immediately followed by [https://archived-url]
+          const after = text.slice(uM.index + uM[0].length).trimStart();
+          if (/^\[https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i.test(after)) continue;
+          hasUnarchivedUrl = true;
+          break;
+        }
+        if (hasUnarchivedUrl) {
+          problems.push({
+            type: 'warning',
+            rule: 'URL_NOT_ARCHIVED',
+            msg:  `Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). <a href="https://permadrop.kirinchang.com/" target="_blank" rel="noopener noreferrer">PermaDrop</a> can help you create one.`,
+          });
         }
 
         // ── Cf. without explanatory parenthetical ────────────────────────
