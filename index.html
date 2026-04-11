@@ -334,18 +334,6 @@
     </div>
   </div>
 
-  <!-- Check group toggles -->
-  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding:0 2px;">
-    <span style="font-size:11px; font-weight:600; color:var(--text-faint); letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap;">Checks:</span>
-    <template x-for="g in ruleGroups" :key="g.id">
-      <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; padding:3px 10px; border-radius:99px; border:1px solid var(--border); background:var(--surface); transition:border-color 0.15s;"
-             :style="g.enabled ? 'border-color:var(--text-muted);' : 'opacity:0.5;'">
-        <input type="checkbox" x-model="g.enabled" style="width:11px; height:11px; cursor:pointer; accent-color:var(--text);">
-        <span style="font-size:12px; font-weight:500;" :style="g.enabled ? 'color:var(--text)' : 'color:var(--text-faint)'" x-text="g.label"></span>
-      </label>
-    </template>
-  </div>
-
   <!-- Per-file results -->
   <template x-for="fo in files" :key="fo.id">
     <div class="card" style="margin-top:16px;">
@@ -381,6 +369,18 @@
 
       <!-- File result body -->
       <div x-show="fo.analyzed && !fo.collapsed" x-transition style="margin-top:16px;">
+
+        <!-- Per-file check toggles -->
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+          <span style="font-size:11px; font-weight:600; color:var(--text-faint); letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap;">Checks:</span>
+          <template x-for="g in fo.ruleGroups" :key="g.id">
+            <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; padding:3px 10px; border-radius:99px; border:1px solid var(--border); background:var(--surface); transition:border-color 0.15s;"
+                   :style="g.enabled ? 'border-color:var(--text-muted);' : 'opacity:0.5;'">
+              <input type="checkbox" x-model="g.enabled" style="width:11px; height:11px; cursor:pointer; accent-color:var(--text);">
+              <span style="font-size:12px; font-weight:500;" :style="g.enabled ? 'color:var(--text)' : 'color:var(--text-faint)'" x-text="g.label"></span>
+            </label>
+          </template>
+        </div>
 
         <!-- Stats grid -->
         <div class="stat-grid">
@@ -430,7 +430,7 @@
 
           <!-- Issues tab -->
           <div x-show="fo.activeTab === 'issues' && fo.issues.length > 0">
-            <template x-for="fn in fo.issues.filter(f => !f.dismissed && f.problems.some(p => enabledRules.has(p.rule)))" :key="fn.footnoteNum">
+            <template x-for="fn in fo.issues.filter(f => !f.dismissed && f.problems.some(p => fileEnabledRules(fo).has(p.rule)))" :key="fn.footnoteNum">
               <div class="issue-group" :class="fn.confirmed ? 'confirmed' : ''">
                 <div class="issue-group-header" @click="toggleFn(fo, fn.footnoteNum)">
                   <span class="issue-fn-num" x-text="'fn. ' + fn.footnoteNum"></span>
@@ -459,7 +459,7 @@
                   <div class="issue-text-preview" x-html="highlightText(fn.text)"></div>
 
                   <!-- Problems list -->
-                  <template x-for="prob in fn.problems.filter(p => enabledRules.has(p.rule))" :key="prob.rule + prob.msg">
+                  <template x-for="prob in fn.problems.filter(p => fileEnabledRules(fo).has(p.rule))" :key="prob.rule + prob.msg">
                     <div>
                       <div class="issue-problem">
                         <span class="issue-problem-icon" x-text="prob.type === 'error' ? '✕' : '⚠'"></span>
@@ -518,7 +518,7 @@
           </div>
 
           <!-- No visible issues (all dismissed or filtered out) -->
-          <div x-show="fo.activeTab === 'issues' && fo.issues.filter(f=>!f.dismissed && f.problems.some(p=>enabledRules.has(p.rule))).length === 0 && fo.stats.total > 0 && fo.issues.length > 0">
+          <div x-show="fo.activeTab === 'issues' && fo.issues.filter(f=>!f.dismissed && f.problems.some(p=>fileEnabledRules(fo).has(p.rule))).length === 0 && fo.stats.total > 0 && fo.issues.length > 0">
             <div class="all-clear"><p>No issues to display.</p></div>
           </div>
 
@@ -613,16 +613,36 @@
       </div>
     </div>
 
-    <!-- Housekeeping -->
+    <!-- Format -->
     <div style="border:1px solid var(--border); border-radius:7px; overflow:hidden;">
-      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.housekeeping = !legendOpen.housekeeping">
-        <span style="font-size:13px; font-weight:600; color:var(--text);">Housekeeping</span>
-        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.housekeeping ? '▲' : '▼'"></span>
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.format = !legendOpen.format">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Format</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.format ? '▲' : '▼'"></span>
       </button>
-      <div x-show="legendOpen.housekeeping" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
+      <div x-show="legendOpen.format" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>FOOTNOTE_NO_PERIOD</strong> — footnote does not end with a period.</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote.</div>
+      </div>
+    </div>
+
+    <!-- URLs -->
+    <div style="border:1px solid var(--border); border-radius:7px; overflow:hidden;">
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.urls = !legendOpen.urls">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">URLs</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.urls ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="legendOpen.urls" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>URL_NOT_ARCHIVED</strong> — Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). <a href="https://permadrop.kirinchang.com/" target="_blank" rel="noopener noreferrer" style="color:var(--indigo-400,#818cf8);">PermaDrop</a> can help you create one.</div>
+      </div>
+    </div>
+
+    <!-- Hereinafter -->
+    <div style="border:1px solid var(--border); border-radius:7px; overflow:hidden;">
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.hereinafter = !legendOpen.hereinafter">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Hereinafter</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.hereinafter ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="legendOpen.hereinafter" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote.</div>
       </div>
     </div>
   </div>
@@ -656,25 +676,29 @@ function app() {
     //            footnotes, issues, stats, expandedFn, activeTab, showDismissed}]
     files: [],
 
-    // Rule group toggles (global — apply to all files)
-    ruleGroups: [
-      { id: 'supra',        label: 'Supra',        enabled: true,
+    // Default rule groups — cloned into each fo.ruleGroups on file load
+    defaultRuleGroups: [
+      { id: 'supra',       label: 'Supra',       enabled: true,
         rules: ['SUPRA_NONEXISTENT','SUPRA_FORWARD','SUPRA_TO_SHORT_CITE','SUPRA_NO_PINCITE','SUPRA_WRONG_SOURCE_TYPE'] },
-      { id: 'id',           label: 'Id.',           enabled: true,
+      { id: 'id',          label: 'Id.',          enabled: true,
         rules: ['ID_NO_PRECEDING','ID_AMBIGUOUS','ID_STALE'] },
-      { id: 'signals',      label: 'Signals',       enabled: true,
+      { id: 'signals',     label: 'Signals',      enabled: true,
         rules: ['SEE_GEN_NO_PAREN','CF_NO_PAREN','BUT_CF_NO_PAREN','COMPARE_WITH_NO_PAREN'] },
-      { id: 'pincites',     label: 'Quotes',        enabled: true,
+      { id: 'pincites',    label: 'Quotes',       enabled: true,
         rules: ['QUOTE_NO_PINCITE'] },
-      { id: 'housekeeping', label: 'Housekeeping',  enabled: true,
-        rules: ['FOOTNOTE_NO_PERIOD','HEREINAFTER_NEVER_USED','URL_NOT_ARCHIVED'] },
+      { id: 'format',      label: 'Format',       enabled: true,
+        rules: ['FOOTNOTE_NO_PERIOD'] },
+      { id: 'urls',        label: 'URLs',         enabled: true,
+        rules: ['URL_NOT_ARCHIVED'] },
+      { id: 'hereinafter', label: 'Hereinafter',  enabled: true,
+        rules: ['HEREINAFTER_NEVER_USED'] },
     ],
 
     // Legend accordion state
-    legendOpen: { supra: false, id: false, signals: false, pincites: false, housekeeping: false },
+    legendOpen: { supra: false, id: false, signals: false, pincites: false, format: false, urls: false, hereinafter: false },
 
-    get enabledRules() {
-      return new Set(this.ruleGroups.flatMap(g => g.enabled ? g.rules : []));
+    fileEnabledRules(fo) {
+      return new Set((fo.ruleGroups || []).flatMap(g => g.enabled ? g.rules : []));
     },
 
     init() {
@@ -688,12 +712,12 @@ function app() {
     /* ── Per-file computed helpers ─────────────────────────────────────── */
 
     fileErrorCount(fo) {
-      const e = this.enabledRules;
+      const e = this.fileEnabledRules(fo);
       return fo.issues.reduce((n, f) => n + f.problems.filter(p => p.type === 'error' && e.has(p.rule)).length, 0);
     },
 
     fileWarningCount(fo) {
-      const e = this.enabledRules;
+      const e = this.fileEnabledRules(fo);
       return fo.issues.reduce((n, f) => n + f.problems.filter(p => p.type === 'warning' && e.has(p.rule)).length, 0);
     },
 
@@ -736,6 +760,7 @@ function app() {
         expandedFn:    null,
         activeTab:     'issues',
         showDismissed: false,
+        ruleGroups:    JSON.parse(JSON.stringify(this.defaultRuleGroups)),
       });
 
       try {
@@ -1261,8 +1286,8 @@ function app() {
     /* ── Export ────────────────────────────────────────────────────────── */
 
     downloadCsv(fo) {
-      const e = this.enabledRules;
-      const enabledLabel = this.ruleGroups.filter(g => g.enabled).map(g => g.label).join(', ');
+      const e = this.fileEnabledRules(fo);
+      const enabledLabel = fo.ruleGroups.filter(g => g.enabled).map(g => g.label).join(', ');
       const rows = [
         [`SupraDrop Citation Report — Checks: ${enabledLabel}`],
         ['Footnote', 'Severity', 'Review Status', 'Rule', 'Message', 'Footnote Text Preview'],
@@ -1281,9 +1306,9 @@ function app() {
     },
 
     downloadTxt(fo) {
-      const e = this.enabledRules;
+      const e = this.fileEnabledRules(fo);
       const ec = this.fileErrorCount(fo), wc = this.fileWarningCount(fo);
-      const enabledLabel = this.ruleGroups.filter(g => g.enabled).map(g => g.label).join(', ');
+      const enabledLabel = fo.ruleGroups.filter(g => g.enabled).map(g => g.label).join(', ');
       const lines = [
         `SupraDrop Citation Validation Report`,
         `File: ${fo.name}`,
@@ -1316,7 +1341,7 @@ function app() {
 
     async downloadAnnotated(fo) {
       if (!fo.zip || !fo.issues.length) return;
-      const enabled = this.enabledRules;
+      const enabled = this.fileEnabledRules(fo);
 
       const blocks = [];
       let nextCommentId = 1;
