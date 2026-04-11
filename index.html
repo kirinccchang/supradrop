@@ -622,7 +622,7 @@
       <div x-show="legendOpen.housekeeping" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>FOOTNOTE_NO_PERIOD</strong> — footnote does not end with a period.</div>
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote.</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>URL_NOT_ARCHIVED</strong> — Bluebook R. 18.2 requires a permanent, archived URL (e.g., <a href="https://permadrop.kirinchang.com/" target="_blank" rel="noopener noreferrer" style="color:var(--indigo-400,#818cf8);">PermaDrop</a> or Perma.cc).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>URL_NOT_ARCHIVED</strong> — Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). <a href="https://permadrop.kirinchang.com/" target="_blank" rel="noopener noreferrer" style="color:var(--indigo-400,#818cf8);">PermaDrop</a> can help you create one.</div>
       </div>
     </div>
   </div>
@@ -1054,7 +1054,7 @@ function app() {
             problems.push({
               type: 'warning',
               rule: 'URL_NOT_ARCHIVED',
-              msg:  `Bluebook R. 18.2 requires a permanent, archived URL. Consider archiving with PermaDrop (permadrop.kirinchang.com) or Perma.cc.`,
+              msg:  `Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). PermaDrop (permadrop.kirinchang.com) can help you create one.`,
             });
           }
         }
