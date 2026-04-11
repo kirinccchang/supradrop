@@ -771,27 +771,54 @@ function app() {
 
     /**
      * Heuristic: count how many distinct sources are likely cited.
-     * Semicolons inside parentheticals (explanatory / case descriptions) are
-     * NOT citation separators — only count ones at depth 0.
+     *
+     * A semicolon is a citation separator only when the text segment
+     * BEFORE it looks like a completed citation — i.e. it already contains
+     * a case "v.", a law-review year "(YYYY)", a URL, or a statute marker.
+     * This correctly ignores semicolons inside article subtitles (e.g.
+     * "2024 Predictions; 2025 Perceptions") and inside parentheticals.
      */
     estimateSourceCount(text) {
-      const semis   = this._countSemisOutsideParens(text);
+      const semis   = this._countCitationSemis(text);
       const signals = (text.match(/\b(?:see also|but see|compare|accord|contra)\b/gi) || []).length;
       return 1 + semis + signals;
     },
 
-    /** Count semicolons that appear outside any level of parentheses. */
-    _countSemisOutsideParens(text) {
-      let depth = 0, count = 0;
-      for (const ch of text) {
+    /**
+     * Count semicolons at paren-depth 0 where the segment before the semicolon
+     * looks like a completed citation.
+     */
+    _countCitationSemis(text) {
+      let depth = 0, count = 0, segStart = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
         if      (ch === '(') depth++;
         else if (ch === ')') depth = Math.max(0, depth - 1);
-        else if (ch === ';' && depth === 0) count++;
+        else if (ch === ';' && depth === 0) {
+          if (this._completedCitation(text.slice(segStart, i))) count++;
+          segStart = i + 1;
+        }
       }
       return count;
     },
 
-    /** True if there is any semicolon outside parentheses. */
+    /**
+     * True if `seg` contains hallmarks of a completed legal citation:
+     *   • case name "v."
+     *   • law-review terminal year "(2024)"  ← exactly 4 digits inside parens
+     *   • a URL
+     *   • a statute marker (U.S.C., § N, Pub. L.)
+     */
+    _completedCitation(seg) {
+      return (
+        /\bv\.\s/.test(seg)                          ||
+        /\(\d{4}\)/.test(seg)                        ||
+        /https?:\/\//.test(seg)                      ||
+        /\b(U\.S\.C\.|§\s*\d|Pub\. L\.)/.test(seg)
+      );
+    },
+
+    /** True if there is any semicolon outside parentheses (used by looksLikeOnlyId). */
     _hasSemiOutsideParens(text) {
       let depth = 0;
       for (const ch of text) {
