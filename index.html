@@ -224,6 +224,12 @@
     /* Preceding-footnote context block inside an issue card */
     .issue-prev-ctx { padding: 0 14px 10px; }
     .issue-ctx-label { padding: 6px 14px 2px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-faint); }
+    /* Confirmed-error badge */
+    .badge-confirmed { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+    body:not(.dark) .badge-confirmed { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+    /* Issue card with confirmed state gets a red left accent */
+    .issue-group.confirmed { border-color: #ef4444; }
+    .issue-group.confirmed .issue-group-header { border-left: 3px solid #ef4444; }
 
     /* Footnote browser */
     .fn-browser-item { padding: 8px 12px; border-bottom: 1px solid var(--divider); font-size: 12px; display: flex; gap: 10px; align-items: flex-start; }
@@ -389,15 +395,22 @@
         <!-- Issues tab -->
         <div x-show="activeTab === 'issues' && issues.length > 0">
           <template x-for="fn in issues" :key="fn.footnoteNum">
-            <div class="issue-group">
+            <div class="issue-group" :class="fn.confirmed ? 'confirmed' : ''">
               <div class="issue-group-header" @click="toggleFn(fn.footnoteNum)">
                 <span class="issue-fn-num" x-text="'fn. ' + fn.footnoteNum"></span>
                 <span class="issue-summary">
-                  <template x-if="fn.problems.filter(p => p.type === 'error').length > 0">
-                    <span class="badge badge-error" style="margin-right:6px;" x-text="fn.problems.filter(p=>p.type==='error').length + ' error' + (fn.problems.filter(p=>p.type==='error').length > 1 ? 's' : '')"></span>
+                  <template x-if="fn.confirmed">
+                    <span class="badge badge-confirmed" style="margin-right:6px;">✓ confirmed error</span>
                   </template>
-                  <template x-if="fn.problems.filter(p => p.type === 'warning').length > 0">
-                    <span class="badge badge-warning" x-text="fn.problems.filter(p=>p.type==='warning').length + ' warning' + (fn.problems.filter(p=>p.type==='warning').length > 1 ? 's' : '')"></span>
+                  <template x-if="!fn.confirmed">
+                    <span>
+                      <template x-if="fn.problems.filter(p => p.type === 'error').length > 0">
+                        <span class="badge badge-error" style="margin-right:6px;" x-text="fn.problems.filter(p=>p.type==='error').length + ' error' + (fn.problems.filter(p=>p.type==='error').length > 1 ? 's' : '')"></span>
+                      </template>
+                      <template x-if="fn.problems.filter(p => p.type === 'warning').length > 0">
+                        <span class="badge badge-warning" x-text="fn.problems.filter(p=>p.type==='warning').length + ' warning' + (fn.problems.filter(p=>p.type==='warning').length > 1 ? 's' : '')"></span>
+                      </template>
+                    </span>
                   </template>
                 </span>
                 <span class="issue-chevron" :class="expandedFn === fn.footnoteNum ? 'open' : ''">▶</span>
@@ -427,12 +440,23 @@
                   </div>
                 </template>
 
-                <!-- Dismiss -->
-                <div style="padding:8px 14px; display:flex; justify-content:flex-end; border-top:1px solid var(--divider);">
+                <!-- Review actions -->
+                <div style="padding:8px 14px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--divider);">
                   <button class="btn-ghost" style="font-size:11px; color:var(--text-faint);"
-                          @click.stop="dismissIssue(fn.footnoteNum)">
-                    Mark as reviewed ✓
+                          @click.stop="dismissIssue(fn.footnoteNum)"
+                          title="Remove from list — this flag is a false positive">
+                    Looks correct
                   </button>
+                  <template x-if="!fn.confirmed">
+                    <button class="btn-ghost" style="font-size:11px; color:#dc2626; border-color:#fca5a5;"
+                            @click.stop="confirmIssue(fn.footnoteNum)"
+                            title="Keep and mark — this is a real error that needs fixing">
+                      Confirm error ✗
+                    </button>
+                  </template>
+                  <template x-if="fn.confirmed">
+                    <span style="font-size:11px; color:#dc2626; padding:5px 10px; font-weight:500;">✓ Confirmed</span>
+                  </template>
                 </div>
               </div>
             </div>
@@ -869,6 +893,11 @@ function app() {
       if (this.expandedFn === footnoteNum) this.expandedFn = null;
     },
 
+    confirmIssue(footnoteNum) {
+      const issue = this.issues.find(f => f.footnoteNum === footnoteNum);
+      if (issue) issue.confirmed = true;
+    },
+
     formatSize(bytes) {
       if (bytes < 1024)         return bytes + ' B';
       if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -901,11 +930,12 @@ function app() {
     /* ── Export ────────────────────────────────────────────────────────── */
 
     downloadCsv() {
-      const rows = [['Footnote', 'Severity', 'Rule', 'Message', 'Footnote Text Preview']];
+      const rows = [['Footnote', 'Severity', 'Review Status', 'Rule', 'Message', 'Footnote Text Preview']];
       for (const fn of this.issues) {
+        const status = fn.confirmed ? 'confirmed error' : 'unreviewed';
         for (const p of fn.problems) {
           const preview = fn.text.slice(0, 120).replace(/\r?\n/g, ' ');
-          rows.push([fn.footnoteNum, p.type, p.rule, p.msg, preview]);
+          rows.push([fn.footnoteNum, p.type, status, p.rule, p.msg, preview]);
         }
       }
       const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\r\n');
