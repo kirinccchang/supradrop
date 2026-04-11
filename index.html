@@ -539,6 +539,7 @@
         <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>SUPRA_NONEXISTENT</strong> — <em>supra note N</em> where footnote N doesn't exist in the document.</div>
         <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>SUPRA_FORWARD</strong> — <em>supra note N</em> where N ≥ current footnote number (forward reference).</div>
         <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>SUPRA_TO_SHORT_CITE</strong> — <em>supra note N</em> where footnote N itself starts with a short citation (Id. or supra), not a full citation.</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>SUPRA_NO_PINCITE</strong> — <em>supra note N</em> without a following pincite; Bluebook requires "supra note N, at [page]".</div>
         <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>ID_NO_PRECEDING</strong> — <em>Id.</em> with no preceding citation to reference.</div>
         <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>ID_AMBIGUOUS</strong> — <em>Id.</em> following a footnote that appears to cite multiple sources; the referent is ambiguous.</div>
         <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>SEE_GEN_NO_PAREN</strong> — <em>See generally</em> without an explanatory parenthetical; Bluebook strongly prefers one (e.g., <em>(arguing that...)</em>).</div>
@@ -756,7 +757,7 @@ function app() {
         const supraRe = /\bsupra\s+notes?\s+(\d+)/gi;
         let m;
         while ((m = supraRe.exec(text)) !== null) {
-          supraMatches.push({ refNum: parseInt(m[1], 10), fullMatch: m[0] });
+          supraMatches.push({ refNum: parseInt(m[1], 10), fullMatch: m[0], matchEnd: m.index + m[0].length });
         }
 
         // ── Find all Id. refs in this footnote ───────────────────────────
@@ -792,6 +793,17 @@ function app() {
                 rule: 'SUPRA_TO_SHORT_CITE',
                 msg:  `"${ref.fullMatch}" — footnote ${ref.refNum} itself begins with ${targetIsId ? 'Id.' : 'supra note'}, not a full citation. A supra must refer to a full-citation footnote.`,
               });
+            } else {
+              // Check for pincite: text after the match should have ", at N" or "at N"
+              const afterMatch = text.slice(ref.matchEnd);
+              const hasPincite = /^[\s,]*at\s+[\d*§]/.test(afterMatch);
+              if (!hasPincite) {
+                problems.push({
+                  type: 'warning',
+                  rule: 'SUPRA_NO_PINCITE',
+                  msg:  `"${ref.fullMatch}" — missing pincite; Bluebook requires "supra note N, at [page]".`,
+                });
+              }
             }
           }
         }
