@@ -819,7 +819,10 @@ function app() {
      * Adds a space between <w:p> paragraph elements.
      */
     extractText(node) {
-      const SKIP = new Set(['instrText', 'footnoteRef', 'endnoteRef', 'rPr', 'pPr', 'sectPr', 'fldChar']);
+      return this._extractTextInner(node).trim().replace(/^\.\s*/, '');
+    },
+    _extractTextInner(node) {
+      const SKIP = new Set(['instrtext', 'footnoteref', 'endnoteref', 'rpr', 'ppr', 'sectpr', 'fldchar']);
       let text = '';
       for (const child of node.childNodes) {
         const ln = (child.localName || '').toLowerCase();
@@ -832,20 +835,18 @@ function app() {
         } else if (ln === 'br') {
           text += ' ';
         } else if (ln === 'p') {
-          // Keep paragraphs within a footnote separated by a space
-          const paraText = this.extractText(child);
+          const paraText = this._extractTextInner(child).trim();
           if (paraText) {
             if (text) text += ' ';
             text += paraText;
           }
         } else if (ln === 'r') {
-          // Skip the auto-number reference-mark run at the top of every footnote body
-          if (!this._isFootnoteRefRun(child)) text += this.extractText(child);
+          if (!this._isFootnoteRefRun(child)) text += this._extractTextInner(child);
         } else if (child.childNodes && child.childNodes.length > 0) {
-          text += this.extractText(child);
+          text += this._extractTextInner(child);
         }
       }
-      return text.trim().replace(/^\.\s*/, '');
+      return text;
     },
 
     /**
