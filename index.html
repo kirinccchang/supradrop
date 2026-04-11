@@ -1,5 +1,5 @@
 <!--
-  SupraDrop — Supra & Id. Citation Validator for Legal Scholars
+  SupraDrop — Bluebook Citation Auditor for Legal Scholars
   Copyright (C) 2026 Kirin Chang <https://kirinchang.com>
 
   This program is free software: you can redistribute it and/or modify
@@ -24,8 +24,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
   <!-- Primary SEO -->
-  <title>SupraDrop — Supra & Id. Citation Validator for Legal Scholars</title>
-  <meta name="description" content="Validate supra and Id. citations in Word document footnotes. Browser-based, no uploads. Free tool for law review editors and legal scholars.">
+  <title>SupraDrop — Bluebook Citation Auditor for Legal Scholars</title>
+  <meta name="description" content="Audit Bluebook citations in Word document footnotes: supra, Id., signal parentheticals, pincites, hereinafter, and more. Browser-based, no uploads. Free tool for law review editors.">
   <meta name="author" content="Kirin Chang">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://supradrop.kirinchang.com/">
@@ -33,7 +33,7 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="SupraDrop">
-  <meta property="og:title" content="SupraDrop — Supra & Id. Citation Validator for Legal Scholars">
+  <meta property="og:title" content="SupraDrop — Bluebook Citation Auditor for Legal Scholars">
   <meta property="og:description" content="Validate supra and Id. citations in Word document footnotes. Browser-based, no uploads. Free tool for law review editors and legal scholars.">
   <meta property="og:url" content="https://supradrop.kirinchang.com/">
   <meta property="og:image" content="https://supradrop.kirinchang.com/og-image.png">
@@ -43,7 +43,7 @@
 
   <!-- Twitter / X Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SupraDrop — Supra & Id. Citation Validator for Legal Scholars">
+  <meta name="twitter:title" content="SupraDrop — Bluebook Citation Auditor for Legal Scholars">
   <meta name="twitter:description" content="Validate supra and Id. citations in Word document footnotes. Browser-based, no uploads.">
   <meta name="twitter:image" content="https://supradrop.kirinchang.com/og-image.png">
   <meta name="twitter:creator" content="@chengchi_chang">
@@ -145,8 +145,7 @@
     .btn-primary:disabled { background: var(--text-faint); cursor: not-allowed; }
     .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); font-size: 12px; padding: 5px 10px; }
     .btn-ghost:hover:not(:disabled) { background: var(--hover-bg); }
-    .btn-success { background: #16a34a; color: white; }
-    .btn-success:hover:not(:disabled) { background: #15803d; }
+    .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
     .drop-zone {
       border: 2px dashed var(--border-input); border-radius: 8px; padding: 32px;
       text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
@@ -167,7 +166,6 @@
     .divider { height: 1px; background: var(--divider); margin: 14px 0; }
     .dark-toggle { background: none; border: 1px solid var(--border); border-radius: 99px; padding: 4px 11px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
     .dark-toggle:hover { background: var(--hover-bg); }
-    .dimmed { opacity: 0.45; pointer-events: none; }
     .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
     .badge-error   { background: var(--error-bg); color: var(--error-text); border: 1px solid var(--error-border); }
     .badge-warning { background: var(--warn-bg);  color: var(--warn-text);  border: 1px solid var(--warn-border); }
@@ -257,6 +255,14 @@
     .sister-banner { display: flex; align-items: center; gap: 10px; background: var(--preview-bg); border: 1px solid var(--border); border-radius: 7px; padding: 9px 13px; margin-top: 10px; }
     .sister-banner p { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
     .sister-banner a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+
+    /* Per-file result card header */
+    .file-result-header { display: flex; align-items: center; gap: 10px; }
+    .file-result-name { flex: 1; min-width: 0; }
+    .file-result-name-text { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+    .file-result-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .file-collapse-btn { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 14px; padding: 2px 6px; }
+    .file-collapse-btn:hover { color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -271,8 +277,8 @@
       </button>
     </div>
     <p class="subtitle">
-      Upload a Word document and instantly validate every <em>supra note N</em> and <em>Id.</em> in your footnotes —
-      catching wrong note numbers, broken chains, and short-citation errors before they go to print.<br>
+      Drop a Word document and audit all 15 Bluebook citation rules in your footnotes —
+      <em>supra</em>, <em>Id.</em>, signal parentheticals, pincites, hereinafter, and more.<br>
       Free &amp; open source · Runs entirely in your browser · Nothing leaves your device
     </p>
     <p style="margin-top:8px; font-size:13px; color:var(--text-muted);">
@@ -283,42 +289,40 @@
     </p>
   </div>
 
-  <!-- STEP 1: Upload -->
+  <!-- Upload card -->
   <div class="card">
     <div class="card-header">
-      <div class="step-badge" :class="analyzed ? 'done' : 'active'">
-        <span x-show="!analyzed">1</span>
-        <span x-show="analyzed">✓</span>
+      <div class="step-badge" :class="files.length > 0 ? 'done' : 'active'">
+        <span x-show="files.length === 0">1</span>
+        <span x-show="files.length > 0">✓</span>
       </div>
-      <div class="card-title">Upload Word Document</div>
+      <div class="card-title">Upload Word Document(s)</div>
     </div>
 
-    <div x-show="!file">
-      <div class="drop-zone" :class="dragging ? 'dragover' : ''"
-           @click="$refs.fileInput.click()"
-           @dragover.prevent="dragging = true"
-           @dragleave="dragging = false"
-           @drop.prevent="onDrop($event)">
-        <p>
-          <strong>Click to choose</strong> or drag &amp; drop a <strong>.docx</strong> file
-        </p>
-        <p style="font-size:12px; color:var(--text-faint); margin-top:6px;">One file at a time</p>
-      </div>
-      <input type="file" accept=".docx" class="file-input" x-ref="fileInput" @change="onFileInput($event)" />
+    <div class="drop-zone" :class="dragging ? 'dragover' : ''"
+         @click="$refs.fileInput.click()"
+         @dragover.prevent="dragging = true"
+         @dragleave="dragging = false"
+         @drop.prevent="onDrop($event)">
+      <p>
+        <strong>Click to choose</strong> or drag &amp; drop <strong>.docx</strong> files
+        <span style="color:var(--text-faint);"> — multiple files allowed</span>
+      </p>
     </div>
+    <input type="file" accept=".docx" multiple class="file-input" x-ref="fileInput" @change="onFileInput($event)" />
 
-    <div x-show="file">
+    <template x-for="fo in files" :key="fo.id">
       <div class="file-chip">
-        <span class="file-chip-name" x-text="fileName"></span>
-        <span class="file-chip-info" x-text="formatSize(fileSize)"></span>
-        <button class="file-chip-remove" @click="reset()" title="Remove">×</button>
+        <span class="file-chip-name" x-text="fo.name"></span>
+        <span class="file-chip-info" x-text="formatSize(fo.size)"></span>
+        <button class="file-chip-remove" @click="removeFile(fo.id)" title="Remove">×</button>
       </div>
-    </div>
+    </template>
 
     <p class="error-msg" x-show="fileError" x-text="fileError"></p>
 
     <div class="privacy-note" style="margin-top:10px;">
-      <p>Your document is read directly in your browser. No file is uploaded. No server receives your content.</p>
+      <p>Your documents are read directly in your browser. No file is uploaded. No server receives your content.</p>
     </div>
 
     <div class="sister-banner" style="margin-top:10px;">
@@ -330,227 +334,294 @@
     </div>
   </div>
 
-  <!-- STEP 2: Results -->
-  <div class="card" :class="!file ? 'dimmed' : ''">
-    <div class="card-header">
-      <div class="step-badge"
-           :class="!file ? 'inactive' : (analyzed && (errorCount + warningCount) === 0) ? 'done' : 'active'">
-        <span x-show="!analyzed || !file">2</span>
-        <span x-show="analyzed && (errorCount + warningCount) === 0">✓</span>
-        <span x-show="analyzed && (errorCount + warningCount) > 0">!</span>
-      </div>
-      <div class="card-title">Validation Results</div>
-    </div>
+  <!-- Check group toggles -->
+  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding:0 2px;">
+    <span style="font-size:11px; font-weight:600; color:var(--text-faint); letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap;">Checks:</span>
+    <template x-for="g in ruleGroups" :key="g.id">
+      <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; padding:3px 10px; border-radius:99px; border:1px solid var(--border); background:var(--surface); transition:border-color 0.15s;"
+             :style="g.enabled ? 'border-color:var(--text-muted);' : 'opacity:0.5;'">
+        <input type="checkbox" x-model="g.enabled" style="width:11px; height:11px; cursor:pointer; accent-color:var(--text);">
+        <span style="font-size:12px; font-weight:500;" :style="g.enabled ? 'color:var(--text)' : 'color:var(--text-faint)'" x-text="g.label"></span>
+      </label>
+    </template>
+  </div>
 
-    <!-- Parsing spinner -->
-    <div x-show="parsing" style="font-size:13px; color:var(--text-muted); padding: 8px 0;">
-      <span class="spinner"></span>Parsing document…
-    </div>
+  <!-- Per-file results -->
+  <template x-for="fo in files" :key="fo.id">
+    <div class="card" style="margin-top:16px;">
 
-    <!-- Not yet parsed -->
-    <div x-show="!parsing && !analyzed && file">
-      <p style="font-size:13px; color:var(--text-muted);">Analyzing…</p>
-    </div>
-
-    <div x-show="analyzed && !parsing">
-
-      <!-- Stats grid -->
-      <div class="stat-grid">
-        <div class="stat-box">
-          <div class="stat-val" x-text="stats.total"></div>
-          <div class="stat-lbl">Footnotes</div>
+      <!-- File result header -->
+      <div class="file-result-header">
+        <div class="step-badge"
+             :class="fo.parsing ? 'active' : !fo.analyzed ? 'inactive' : (fileErrorCount(fo) + fileWarningCount(fo) === 0) ? 'done' : 'active'">
+          <span x-show="fo.parsing"><span class="spinner" style="width:10px; height:10px; margin:0;"></span></span>
+          <span x-show="!fo.parsing && fo.analyzed && (fileErrorCount(fo) + fileWarningCount(fo)) === 0">✓</span>
+          <span x-show="!fo.parsing && fo.analyzed && (fileErrorCount(fo) + fileWarningCount(fo)) > 0">!</span>
+          <span x-show="!fo.parsing && !fo.analyzed">2</span>
         </div>
-        <div class="stat-box">
-          <div class="stat-val" x-text="stats.supraRefs"></div>
-          <div class="stat-lbl">Supra refs</div>
+        <div class="file-result-name">
+          <div class="file-result-name-text" x-text="fo.name"></div>
+          <div class="file-result-meta" x-show="fo.analyzed">
+            <span x-text="fo.stats.total + ' footnotes'"></span>
+            <span x-show="fileErrorCount(fo) > 0" style="color:#dc2626; margin-left:8px;"
+                  x-text="fileErrorCount(fo) + ' error' + (fileErrorCount(fo) !== 1 ? 's' : '')"></span>
+            <span x-show="fileWarningCount(fo) > 0" style="color:#d97706; margin-left:4px;"
+                  x-text="fileWarningCount(fo) + ' warning' + (fileWarningCount(fo) !== 1 ? 's' : '')"></span>
+            <span x-show="fileErrorCount(fo) === 0 && fileWarningCount(fo) === 0" style="color:#16a34a; margin-left:8px;">All clear</span>
+          </div>
+          <div class="file-result-meta" x-show="fo.parsing">
+            <span class="spinner"></span>Parsing…
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="stat-val" x-text="stats.idRefs"></div>
-          <div class="stat-lbl">Id. refs</div>
-        </div>
-        <div class="stat-box" :class="errorCount > 0 ? 'stat-error' : (warningCount > 0 ? 'stat-warning' : '')">
-          <div class="stat-val" :class="errorCount > 0 ? 'stat-val-error' : (warningCount > 0 ? 'stat-val-warning' : '')" x-text="errorCount + warningCount"></div>
-          <div class="stat-lbl">Issues found</div>
-        </div>
-      </div>
-
-      <!-- All clear -->
-      <div class="all-clear" x-show="issues.length === 0 && stats.total > 0">
-        <p>All citations look correct.</p>
-        <p class="all-clear-sub">No supra or Id. errors detected across <span x-text="stats.total"></span> footnotes.</p>
+        <button class="file-collapse-btn" x-show="fo.analyzed" @click="fo.collapsed = !fo.collapsed"
+                :title="fo.collapsed ? 'Expand' : 'Collapse'"
+                x-text="fo.collapsed ? '▶' : '▼'"></button>
+        <button class="file-chip-remove" @click="removeFile(fo.id)" title="Remove file" style="font-size:18px; margin-left:4px;">×</button>
       </div>
 
-      <!-- No footnotes -->
-      <div x-show="stats.total === 0" style="font-size:13px; color:var(--text-muted);">
-        No footnotes found in this document.
-      </div>
+      <!-- File result body -->
+      <div x-show="fo.analyzed && !fo.collapsed" x-transition style="margin-top:16px;">
 
-      <!-- Issue list with tab switcher -->
-      <div x-show="issues.length > 0 || stats.total > 0">
-        <div class="tab-bar" x-show="stats.total > 0">
-          <button class="tab-btn" :class="activeTab === 'issues' ? 'active' : ''" @click="activeTab = 'issues'">
-            Issues
-            <span x-show="issues.length > 0" style="margin-left:4px; font-size:10px; opacity:0.8;" x-text="'(' + issues.length + ')'"></span>
-          </button>
-          <button class="tab-btn" :class="activeTab === 'browser' ? 'active' : ''" @click="activeTab = 'browser'">
-            All Footnotes
-            <span style="margin-left:4px; font-size:10px; opacity:0.8;" x-text="'(' + stats.total + ')'"></span>
-          </button>
+        <!-- Stats grid -->
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-val" x-text="fo.stats.total"></div>
+            <div class="stat-lbl">Footnotes</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" x-text="fo.stats.supraRefs"></div>
+            <div class="stat-lbl">Supra refs</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" x-text="fo.stats.idRefs"></div>
+            <div class="stat-lbl">Id. refs</div>
+          </div>
+          <div class="stat-box" :class="fileErrorCount(fo) > 0 ? 'stat-error' : (fileWarningCount(fo) > 0 ? 'stat-warning' : '')">
+            <div class="stat-val" :class="fileErrorCount(fo) > 0 ? 'stat-val-error' : (fileWarningCount(fo) > 0 ? 'stat-val-warning' : '')"
+                 x-text="fileErrorCount(fo) + fileWarningCount(fo)"></div>
+            <div class="stat-lbl">Issues found</div>
+          </div>
         </div>
 
-        <!-- Issues tab -->
-        <div x-show="activeTab === 'issues' && issues.length > 0">
-          <template x-for="fn in issues.filter(f => !f.dismissed)" :key="fn.footnoteNum">
-            <div class="issue-group" :class="fn.confirmed ? 'confirmed' : ''">
-              <div class="issue-group-header" @click="toggleFn(fn.footnoteNum)">
-                <span class="issue-fn-num" x-text="'fn. ' + fn.footnoteNum"></span>
-                <span class="issue-summary">
-                  <template x-if="fn.confirmed">
-                    <span class="badge badge-confirmed" style="margin-right:6px;">✓ confirmed error</span>
-                  </template>
-                  <template x-if="!fn.confirmed">
-                    <span>
-                      <template x-if="fn.problems.filter(p => p.type === 'error').length > 0">
-                        <span class="badge badge-error" style="margin-right:6px;" x-text="fn.problems.filter(p=>p.type==='error').length + ' error' + (fn.problems.filter(p=>p.type==='error').length > 1 ? 's' : '')"></span>
-                      </template>
-                      <template x-if="fn.problems.filter(p => p.type === 'warning').length > 0">
-                        <span class="badge badge-warning" x-text="fn.problems.filter(p=>p.type==='warning').length + ' warning' + (fn.problems.filter(p=>p.type==='warning').length > 1 ? 's' : '')"></span>
-                      </template>
-                    </span>
-                  </template>
-                </span>
-                <span class="issue-chevron" :class="expandedFn === fn.footnoteNum ? 'open' : ''">▶</span>
-              </div>
-              <div class="issue-body" x-show="expandedFn === fn.footnoteNum" x-transition>
-                <!-- Current footnote text -->
-                <div class="issue-ctx-label">This footnote</div>
-                <div class="issue-text-preview" x-html="highlightText(fn.text)"></div>
+        <!-- All clear -->
+        <div class="all-clear" x-show="fo.issues.length === 0 && fo.stats.total > 0">
+          <p>All citations look correct.</p>
+          <p class="all-clear-sub">No errors detected across <span x-text="fo.stats.total"></span> footnotes.</p>
+        </div>
 
-                <!-- Problems list -->
-                <template x-for="prob in fn.problems" :key="prob.rule + prob.msg">
-                  <div>
-                    <div class="issue-problem">
-                      <span class="issue-problem-icon" x-text="prob.type === 'error' ? '✕' : '⚠'"></span>
-                      <div>
-                        <div class="issue-problem-msg" x-text="prob.msg"></div>
-                        <div class="issue-problem-rule" x-text="prob.rule"></div>
+        <!-- No footnotes -->
+        <div x-show="fo.stats.total === 0" style="font-size:13px; color:var(--text-muted);">
+          No footnotes found in this document.
+        </div>
+
+        <!-- Tab bar + issue list -->
+        <div x-show="fo.issues.length > 0 || fo.stats.total > 0">
+          <div class="tab-bar" x-show="fo.stats.total > 0">
+            <button class="tab-btn" :class="fo.activeTab === 'issues' ? 'active' : ''" @click="fo.activeTab = 'issues'">
+              Issues
+              <span x-show="fo.issues.length > 0" style="margin-left:4px; font-size:10px; opacity:0.8;"
+                    x-text="'(' + fo.issues.length + ')'"></span>
+            </button>
+            <button class="tab-btn" :class="fo.activeTab === 'browser' ? 'active' : ''" @click="fo.activeTab = 'browser'">
+              All Footnotes
+              <span style="margin-left:4px; font-size:10px; opacity:0.8;" x-text="'(' + fo.stats.total + ')'"></span>
+            </button>
+          </div>
+
+          <!-- Issues tab -->
+          <div x-show="fo.activeTab === 'issues' && fo.issues.length > 0">
+            <template x-for="fn in fo.issues.filter(f => !f.dismissed && f.problems.some(p => enabledRules.has(p.rule)))" :key="fn.footnoteNum">
+              <div class="issue-group" :class="fn.confirmed ? 'confirmed' : ''">
+                <div class="issue-group-header" @click="toggleFn(fo, fn.footnoteNum)">
+                  <span class="issue-fn-num" x-text="'fn. ' + fn.footnoteNum"></span>
+                  <span class="issue-summary">
+                    <template x-if="fn.confirmed">
+                      <span class="badge badge-confirmed" style="margin-right:6px;">✓ confirmed error</span>
+                    </template>
+                    <template x-if="!fn.confirmed">
+                      <span>
+                        <template x-if="fn.problems.filter(p => p.type === 'error').length > 0">
+                          <span class="badge badge-error" style="margin-right:6px;"
+                                x-text="fn.problems.filter(p=>p.type==='error').length + ' error' + (fn.problems.filter(p=>p.type==='error').length > 1 ? 's' : '')"></span>
+                        </template>
+                        <template x-if="fn.problems.filter(p => p.type === 'warning').length > 0">
+                          <span class="badge badge-warning"
+                                x-text="fn.problems.filter(p=>p.type==='warning').length + ' warning' + (fn.problems.filter(p=>p.type==='warning').length > 1 ? 's' : '')"></span>
+                        </template>
+                      </span>
+                    </template>
+                  </span>
+                  <span class="issue-chevron" :class="fo.expandedFn === fn.footnoteNum ? 'open' : ''">▶</span>
+                </div>
+                <div class="issue-body" x-show="fo.expandedFn === fn.footnoteNum" x-transition>
+                  <!-- Current footnote text -->
+                  <div class="issue-ctx-label">This footnote</div>
+                  <div class="issue-text-preview" x-html="highlightText(fn.text)"></div>
+
+                  <!-- Problems list -->
+                  <template x-for="prob in fn.problems.filter(p => enabledRules.has(p.rule))" :key="prob.rule + prob.msg">
+                    <div>
+                      <div class="issue-problem">
+                        <span class="issue-problem-icon" x-text="prob.type === 'error' ? '✕' : '⚠'"></span>
+                        <div>
+                          <div class="issue-problem-msg" x-text="prob.msg"></div>
+                          <div class="issue-problem-rule" x-text="prob.rule"></div>
+                        </div>
                       </div>
+                      <!-- Preceding footnote context (for ID_AMBIGUOUS) -->
+                      <template x-if="prob.prevFnText">
+                        <div class="issue-prev-ctx">
+                          <div class="issue-ctx-label" x-text="'Preceding footnote (' + prob.prevFnNum + ')'"></div>
+                          <div class="issue-text-preview" style="margin-top:4px;" x-html="highlightText(prob.prevFnText)"></div>
+                        </div>
+                      </template>
                     </div>
-                    <!-- Preceding footnote context (for ID_AMBIGUOUS) -->
-                    <template x-if="prob.prevFnText">
-                      <div class="issue-prev-ctx">
-                        <div class="issue-ctx-label" x-text="'Preceding footnote (' + prob.prevFnNum + ')'"></div>
-                        <div class="issue-text-preview" style="margin-top:4px;" x-html="highlightText(prob.prevFnText)"></div>
-                      </div>
+                  </template>
+
+                  <!-- Review actions -->
+                  <div style="padding:8px 14px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--divider);">
+                    <button class="btn-ghost" style="font-size:11px; color:var(--text-faint);"
+                            @click.stop="dismissIssue(fo, fn.footnoteNum)"
+                            title="Remove from list — this flag is a false positive">
+                      Looks correct
+                    </button>
+                    <template x-if="!fn.confirmed">
+                      <button class="btn-ghost" style="font-size:11px; color:#dc2626; border-color:#fca5a5;"
+                              @click.stop="confirmIssue(fo, fn.footnoteNum)"
+                              title="Keep and mark — this is a real error that needs fixing">
+                        Confirm error ✗
+                      </button>
+                    </template>
+                    <template x-if="fn.confirmed">
+                      <span style="font-size:11px; color:#dc2626; padding:5px 10px; font-weight:500;">✓ Confirmed</span>
                     </template>
                   </div>
-                </template>
-
-                <!-- Review actions -->
-                <div style="padding:8px 14px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--divider);">
-                  <button class="btn-ghost" style="font-size:11px; color:var(--text-faint);"
-                          @click.stop="dismissIssue(fn.footnoteNum)"
-                          title="Remove from list — this flag is a false positive">
-                    Looks correct
-                  </button>
-                  <template x-if="!fn.confirmed">
-                    <button class="btn-ghost" style="font-size:11px; color:#dc2626; border-color:#fca5a5;"
-                            @click.stop="confirmIssue(fn.footnoteNum)"
-                            title="Keep and mark — this is a real error that needs fixing">
-                      Confirm error ✗
-                    </button>
-                  </template>
-                  <template x-if="fn.confirmed">
-                    <span style="font-size:11px; color:#dc2626; padding:5px 10px; font-weight:500;">✓ Confirmed</span>
-                  </template>
                 </div>
               </div>
-            </div>
-          </template>
-        </div>
+            </template>
+          </div>
 
-        <!-- Dismissed section -->
-        <div x-show="activeTab === 'issues' && issues.filter(f => f.dismissed).length > 0" style="margin-top:8px;">
-          <button class="dismissed-toggle" @click="showDismissed = !showDismissed">
-            <span x-text="(showDismissed ? '▾ ' : '▸ ') + 'Dismissed (' + issues.filter(f => f.dismissed).length + ')'"></span>
-          </button>
-          <div x-show="showDismissed" x-transition style="margin-top:6px;">
-            <template x-for="fn in issues.filter(f => f.dismissed)" :key="fn.footnoteNum">
-              <div class="dismissed-row">
-                <span class="issue-fn-num" style="font-size:11px;" x-text="'fn. ' + fn.footnoteNum"></span>
-                <span class="dismissed-text" x-text="fn.text.slice(0, 80) + (fn.text.length > 80 ? '…' : '')"></span>
-                <button class="btn-ghost" style="font-size:11px; flex-shrink:0;" @click="restoreIssue(fn.footnoteNum)">Restore</button>
+          <!-- Dismissed section -->
+          <div x-show="fo.activeTab === 'issues' && fo.issues.filter(f => f.dismissed).length > 0" style="margin-top:8px;">
+            <button class="dismissed-toggle" @click="fo.showDismissed = !fo.showDismissed">
+              <span x-text="(fo.showDismissed ? '▾ ' : '▸ ') + 'Dismissed (' + fo.issues.filter(f => f.dismissed).length + ')'"></span>
+            </button>
+            <div x-show="fo.showDismissed" x-transition style="margin-top:6px;">
+              <template x-for="fn in fo.issues.filter(f => f.dismissed)" :key="fn.footnoteNum">
+                <div class="dismissed-row">
+                  <span class="issue-fn-num" style="font-size:11px;" x-text="'fn. ' + fn.footnoteNum"></span>
+                  <span class="dismissed-text" x-text="fn.text.slice(0, 80) + (fn.text.length > 80 ? '…' : '')"></span>
+                  <button class="btn-ghost" style="font-size:11px; flex-shrink:0;" @click="restoreIssue(fo, fn.footnoteNum)">Restore</button>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- No visible issues (all dismissed or filtered out) -->
+          <div x-show="fo.activeTab === 'issues' && fo.issues.filter(f=>!f.dismissed && f.problems.some(p=>enabledRules.has(p.rule))).length === 0 && fo.stats.total > 0 && fo.issues.length > 0">
+            <div class="all-clear"><p>No issues to display.</p></div>
+          </div>
+
+          <!-- Footnote browser tab -->
+          <div x-show="fo.activeTab === 'browser'" style="border:1px solid var(--border); border-radius:8px; max-height:400px; overflow-y:auto;">
+            <template x-for="fn in fo.footnotes" :key="fn.num">
+              <div class="fn-browser-item">
+                <span class="fn-num" x-text="fn.num + '.'"></span>
+                <span class="fn-text" x-html="highlightText(fn.text)"></span>
               </div>
             </template>
           </div>
         </div>
 
-        <!-- Issues tab — no issues -->
-        <div x-show="activeTab === 'issues' && issues.filter(f=>!f.dismissed).length === 0 && stats.total > 0">
-          <div class="all-clear">
-            <p>No issues to display.</p>
-          </div>
-        </div>
-
-        <!-- Footnote browser tab -->
-        <div x-show="activeTab === 'browser'" style="border: 1px solid var(--border); border-radius: 8px; max-height: 400px; overflow-y: auto;">
-          <template x-for="fn in footnotes" :key="fn.num">
-            <div class="fn-browser-item">
-              <span class="fn-num" x-text="fn.num + '.'"></span>
-              <span class="fn-text" x-html="highlightText(fn.text)"></span>
-            </div>
-          </template>
+        <!-- Export buttons -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid var(--divider);">
+          <button class="btn-primary" @click="downloadCsv(fo)" :disabled="fo.issues.length === 0"
+                  style="font-size:12px; padding:6px 14px;">
+            ⬇ CSV Report
+          </button>
+          <button class="btn-ghost" @click="downloadTxt(fo)" :disabled="fo.issues.length === 0"
+                  style="font-size:12px; padding:6px 14px;">
+            ⬇ Text Report
+          </button>
+          <button class="btn-ghost" @click="downloadAnnotated(fo)" :disabled="!fo.zip || fo.issues.length === 0"
+                  style="font-size:12px; padding:6px 14px; border-color:#a5b4fc; color:#6366f1;"
+                  title="Download original .docx with Word comments added at each flagged footnote">
+            ⬇ Annotated .docx
+          </button>
         </div>
       </div>
-
     </div>
-  </div>
-
-  <!-- STEP 3: Download -->
-  <div class="card" :class="!analyzed ? 'dimmed' : ''">
-    <div class="card-header">
-      <div class="step-badge" :class="!analyzed ? 'inactive' : 'active'">3</div>
-      <div class="card-title">Export Report</div>
-    </div>
-
-    <div x-show="analyzed">
-      <p class="hint" style="margin-bottom: 12px;">
-        Download the validation results for your records or to share with co-editors.
-      </p>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <button class="btn-primary" @click="downloadCsv()" :disabled="issues.length === 0" style="font-size:12px; padding:6px 14px;">
-          ⬇ Download CSV Report
-        </button>
-        <button class="btn-ghost" @click="downloadTxt()" :disabled="issues.length === 0" style="font-size:12px; padding:6px 14px;">
-          ⬇ Download Text Report
-        </button>
-      </div>
-      <p class="hint" style="margin-top:8px;" x-show="issues.length === 0">No issues to export — all citations validated successfully.</p>
-    </div>
-  </div>
+  </template>
 
   <!-- Legend / Help card -->
   <div class="card" style="margin-top: 16px;">
-    <div class="card-header" style="margin-bottom: 10px;">
+    <div class="card-header" style="margin-bottom: 6px;">
       <div class="card-title" style="font-size: 13px; font-weight: 600; color: var(--text-muted);">What gets checked</div>
+      <span style="font-size:11px; color:var(--text-faint);">click a group to expand</span>
     </div>
-    <div style="font-size: 13px; color: var(--text-2); line-height: 1.8;">
-      <div style="display:grid; gap:8px;">
-        <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>SUPRA_NONEXISTENT</strong> — <em>supra note N</em> where footnote N doesn't exist in the document.</div>
-        <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>SUPRA_FORWARD</strong> — <em>supra note N</em> where N ≥ current footnote number (forward reference).</div>
-        <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>SUPRA_TO_SHORT_CITE</strong> — <em>supra note N</em> where footnote N itself starts with a short citation (Id. or supra), not a full citation.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>SUPRA_NO_PINCITE</strong> — <em>supra note N</em> without a following pincite; Bluebook requires "supra note N, at [page]".</div>
-        <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>ID_NO_PRECEDING</strong> — <em>Id.</em> with no preceding citation to reference.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>ID_AMBIGUOUS</strong> — <em>Id.</em> following a footnote that appears to cite multiple sources; the referent is ambiguous.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>SEE_GEN_NO_PAREN</strong> — <em>See generally</em> without an explanatory parenthetical; Bluebook strongly prefers one (e.g., <em>(arguing that...)</em>).</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>CF_NO_PAREN</strong> — <em>Cf.</em> without an explanatory parenthetical; Bluebook R. 1.2 requires one.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>BUT_CF_NO_PAREN</strong> — <em>But cf.</em> without an explanatory parenthetical; Bluebook R. 1.2 requires one.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>COMPARE_WITH_NO_PAREN</strong> — <em>Compare...with...</em> without parentheticals on both sides; Bluebook R. 1.2 requires one per source.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>QUOTE_NO_PINCITE</strong> — Direct quote without an apparent pincite; Bluebook R. 3.2 requires a pincite for all quoted material.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>SUPRA_WRONG_SOURCE_TYPE</strong> — <em>supra note N</em> where footnote N is a case, statute, or constitution; Bluebook R. 4.2 prohibits supra for primary sources.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>ID_STALE</strong> — <em>Id.</em> used more than 5 footnotes after the source was cited; a short-form citation is clearer (Bluebook R. 4.1).</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>FOOTNOTE_NO_PERIOD</strong> — Footnote does not end with a period.</div>
-        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — A <em>[hereinafter X]</em> shorthand is defined but never referenced in any subsequent footnote.</div>
+
+    <!-- Supra citations -->
+    <div style="border:1px solid var(--border); border-radius:7px; margin-bottom:6px; overflow:hidden;">
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.supra = !legendOpen.supra">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Supra citations</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.supra ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="legendOpen.supra" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_NONEXISTENT</strong> — references a footnote number that doesn't exist.</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_FORWARD</strong> — references a later footnote (forward reference).</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_TO_SHORT_CITE</strong> — target footnote is itself a short citation (Id. or supra), not a full citation.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SUPRA_NO_PINCITE</strong> — missing ", at [page]" after supra note N (Bluebook R. 4.2).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SUPRA_WRONG_SOURCE_TYPE</strong> — target is a case, statute, or constitution; supra is prohibited for primary sources (R. 4.2).</div>
+      </div>
+    </div>
+
+    <!-- Id. citations -->
+    <div style="border:1px solid var(--border); border-radius:7px; margin-bottom:6px; overflow:hidden;">
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.id = !legendOpen.id">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Id. citations</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.id ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="legendOpen.id" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>ID_NO_PRECEDING</strong> — Id. appears with no prior citation to refer back to.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>ID_AMBIGUOUS</strong> — preceding footnote cites multiple sources; Id. is ambiguous (R. 4.1).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>ID_STALE</strong> — Id. used more than 5 footnotes after the source; consider a short-form citation (R. 4.1).</div>
+      </div>
+    </div>
+
+    <!-- Signal parentheticals -->
+    <div style="border:1px solid var(--border); border-radius:7px; margin-bottom:6px; overflow:hidden;">
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.signals = !legendOpen.signals">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Citation signals</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.signals ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="legendOpen.signals" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SEE_GEN_NO_PAREN</strong> — <em>See generally</em> without an explanatory parenthetical; Bluebook strongly prefers one.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>CF_NO_PAREN</strong> — <em>Cf.</em> always requires an explanatory parenthetical (R. 1.2).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>BUT_CF_NO_PAREN</strong> — <em>But cf.</em> always requires an explanatory parenthetical (R. 1.2).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>COMPARE_WITH_NO_PAREN</strong> — <em>Compare…with…</em> requires a parenthetical on each side (R. 1.2).</div>
+      </div>
+    </div>
+
+    <!-- Quotes & pincites -->
+    <div style="border:1px solid var(--border); border-radius:7px; margin-bottom:6px; overflow:hidden;">
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.pincites = !legendOpen.pincites">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Quotes &amp; pincites</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.pincites ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="legendOpen.pincites" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>QUOTE_NO_PINCITE</strong> — direct quote detected without a pincite; Bluebook R. 3.2 requires one.</div>
+      </div>
+    </div>
+
+    <!-- Housekeeping -->
+    <div style="border:1px solid var(--border); border-radius:7px; overflow:hidden;">
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.housekeeping = !legendOpen.housekeeping">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Housekeeping</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.housekeeping ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="legendOpen.housekeeping" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>FOOTNOTE_NO_PERIOD</strong> — footnote does not end with a period.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote.</div>
       </div>
     </div>
   </div>
@@ -575,27 +646,35 @@
 <script>
 function app() {
   return {
-    // File state
-    file:     null,
-    fileName: '',
-    fileSize: 0,
-    dragging: false,
-    fileError:'',
+    // ── Global state ───────────────────────────────────────────────────────
+    dragging:  false,
+    fileError: '',
+    darkMode:  false,
 
-    // Processing
-    parsing:  false,
-    analyzed: false,
+    // files[]: [{id, name, size, zip, parsing, analyzed, collapsed,
+    //            footnotes, issues, stats, expandedFn, activeTab, showDismissed}]
+    files: [],
 
-    // Data
-    footnotes: [],  // [{num, text}]
-    issues:    [],  // [{footnoteNum, text, problems:[{type,rule,msg}]}]
-    stats:     { total:0, supraRefs:0, idRefs:0 },
+    // Rule group toggles (global — apply to all files)
+    ruleGroups: [
+      { id: 'supra',        label: 'Supra',        enabled: true,
+        rules: ['SUPRA_NONEXISTENT','SUPRA_FORWARD','SUPRA_TO_SHORT_CITE','SUPRA_NO_PINCITE','SUPRA_WRONG_SOURCE_TYPE'] },
+      { id: 'id',           label: 'Id.',           enabled: true,
+        rules: ['ID_NO_PRECEDING','ID_AMBIGUOUS','ID_STALE'] },
+      { id: 'signals',      label: 'Signals',       enabled: true,
+        rules: ['SEE_GEN_NO_PAREN','CF_NO_PAREN','BUT_CF_NO_PAREN','COMPARE_WITH_NO_PAREN'] },
+      { id: 'pincites',     label: 'Quotes',        enabled: true,
+        rules: ['QUOTE_NO_PINCITE'] },
+      { id: 'housekeeping', label: 'Housekeeping',  enabled: true,
+        rules: ['FOOTNOTE_NO_PERIOD','HEREINAFTER_NEVER_USED'] },
+    ],
 
-    // UI
-    darkMode:     false,
-    expandedFn:   null,
-    activeTab:    'issues',
-    showDismissed: false,
+    // Legend accordion state
+    legendOpen: { supra: false, id: false, signals: false, pincites: false, housekeeping: false },
+
+    get enabledRules() {
+      return new Set(this.ruleGroups.flatMap(g => g.enabled ? g.rules : []));
+    },
 
     init() {
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -605,72 +684,89 @@ function app() {
       document.body.classList.toggle('dark', this.darkMode);
     },
 
-    get errorCount()   { return this.issues.reduce((n, f) => n + f.problems.filter(p => p.type === 'error').length, 0); },
-    get warningCount() { return this.issues.reduce((n, f) => n + f.problems.filter(p => p.type === 'warning').length, 0); },
+    /* ── Per-file computed helpers ─────────────────────────────────────── */
+
+    fileErrorCount(fo) {
+      const e = this.enabledRules;
+      return fo.issues.reduce((n, f) => n + f.problems.filter(p => p.type === 'error' && e.has(p.rule)).length, 0);
+    },
+
+    fileWarningCount(fo) {
+      const e = this.enabledRules;
+      return fo.issues.reduce((n, f) => n + f.problems.filter(p => p.type === 'warning' && e.has(p.rule)).length, 0);
+    },
 
     /* ── File handling ─────────────────────────────────────────────────── */
 
     onDrop(e) {
       this.dragging = false;
-      const f = e.dataTransfer?.files?.[0];
-      if (f) this.loadFile(f);
+      for (const f of Array.from(e.dataTransfer?.files || [])) this.addFile(f);
     },
 
     onFileInput(e) {
-      const f = e.target.files?.[0];
-      if (f) this.loadFile(f);
-      e.target.value = '';  // allow re-selecting same file
+      for (const f of Array.from(e.target.files || [])) this.addFile(f);
+      e.target.value = '';
     },
 
-    async loadFile(f) {
+    async addFile(f) {
       if (!f.name.toLowerCase().endsWith('.docx')) {
-        this.fileError = 'Please upload a .docx (Word) file.';
+        this.fileError = `"${f.name}" is not a .docx file — skipped.`;
         return;
       }
-      this.file      = f;
-      this.fileName  = f.name;
-      this.fileSize  = f.size;
+      if (this.files.some(fo => fo.name === f.name)) {
+        this.fileError = `"${f.name}" is already loaded.`;
+        return;
+      }
       this.fileError = '';
-      this.analyzed  = false;
-      this.issues    = [];
-      this.footnotes = [];
-      this.parsing   = true;
-      this.activeTab = 'issues';
+
+      const id = 'f' + Date.now() + Math.random().toString(36).slice(2);
+      // Push first so Alpine wraps it in a reactive proxy immediately.
+      this.files.push({
+        id,
+        name:          f.name,
+        size:          f.size,
+        zip:           null,
+        parsing:       true,
+        analyzed:      false,
+        collapsed:     false,
+        footnotes:     [],
+        issues:        [],
+        stats:         { total: 0, supraRefs: 0, idRefs: 0 },
+        expandedFn:    null,
+        activeTab:     'issues',
+        showDismissed: false,
+      });
 
       try {
         const buf = await f.arrayBuffer();
-        await this.analyze(buf);
+        const zip = await JSZip.loadAsync(buf);
+        // Always access through this.files so mutations go through Alpine's
+        // reactive proxy (local variable after push() is the plain object).
+        const fo = this.files.find(x => x.id === id);
+        fo.zip = zip;
+        await this.analyzeFile(fo, zip);
       } catch (err) {
-        this.fileError = err.message || 'Failed to parse document.';
+        this.fileError = `Could not read "${f.name}": ${err.message}`;
+        this.files = this.files.filter(x => x.id !== id);
       } finally {
-        this.parsing = false;
+        const fo = this.files.find(x => x.id === id);
+        if (fo) fo.parsing = false;
       }
     },
 
-    reset() {
-      this.file      = null;
-      this.fileName  = '';
-      this.fileSize  = 0;
-      this.fileError = '';
-      this.analyzed  = false;
-      this.issues    = [];
-      this.footnotes = [];
-      this.stats     = { total:0, supraRefs:0, idRefs:0 };
-      this.expandedFn = null;
+    removeFile(fileId) {
+      this.files = this.files.filter(fo => fo.id !== fileId);
     },
 
     /* ── Docx parsing ──────────────────────────────────────────────────── */
 
-    async analyze(arrayBuffer) {
-      const zip   = await JSZip.loadAsync(arrayBuffer);
+    async analyzeFile(fo, zip) {
       const fnFile = zip.file('word/footnotes.xml');
-
       if (!fnFile) {
-        // Document has no footnotes
-        this.footnotes = [];
-        this.issues    = [];
-        this.stats     = { total:0, supraRefs:0, idRefs:0 };
-        this.analyzed  = true;
+        fo.footnotes = [];
+        fo.issues    = [];
+        fo.stats     = { total: 0, supraRefs: 0, idRefs: 0 };
+        fo.analyzed  = true;
         return;
       }
 
@@ -681,49 +777,53 @@ function app() {
 
       const fnNodes = Array.from(xmlDoc.getElementsByTagNameNS(W, 'footnote'));
 
-      // Filter: only keep proper footnotes (no type attr, or type="footnote").
-      // Word always adds type="separator", type="continuationSeparator", and
-      // often type="continuationNotice" (id=1) — all must be excluded.
-      // Then sort by XML id (= document order) and assign sequential 1-based
-      // display numbers, which is what authors use in "supra note N".
-      const SKIP_TYPES = new Set(['separator', 'continuationSeparator', 'continuationNotice']);
+      // Whitelist: keep only footnotes with NO w:type attribute.
+      // Per OOXML spec, system footnotes (separator, continuationSeparator,
+      // continuationNotice) always carry an explicit w:type; user footnotes do not.
       const realNodes = fnNodes.filter(node => {
         const t = node.getAttributeNS(W, 'type') || node.getAttribute('w:type') || '';
-        return !SKIP_TYPES.has(t);
+        return !t;
       }).sort((a, b) => {
         const ia = parseInt(a.getAttributeNS(W, 'id') || a.getAttribute('w:id'), 10);
         const ib = parseInt(b.getAttributeNS(W, 'id') || b.getAttribute('w:id'), 10);
         return ia - ib;
       });
 
-      this.footnotes = realNodes.map((node, i) => ({
-        num:  i + 1,                   // 1-based display number
-        xmlId: parseInt(node.getAttributeNS(W, 'id') || node.getAttribute('w:id'), 10),
-        text: this.extractText(node),
-      }));
+      // Map, then filter to only auto-numbered footnotes:
+      //   - custom-mark footnotes (e.g., the "* Author note") contain <w:t> for the
+      //     mark symbol instead of <w:footnoteRef/>, so Word skips them in its
+      //     sequential numbering — we must exclude them too.
+      //   - truly empty/deleted footnotes (no visible text) are also filtered out.
+      // Re-assign sequential display numbers so they match Word's display.
+      const rawFns = realNodes.map(node => ({
+        xmlId:     parseInt(node.getAttributeNS(W, 'id') || node.getAttribute('w:id'), 10),
+        text:      this.extractText(node),
+        isAutoNum: this._hasFootnoteRef(node),
+      })).filter(fn => fn.isAutoNum && fn.text.length > 0);
 
-      // Compute stats before validation
+      fo.footnotes = rawFns.map((fn, i) => ({ ...fn, num: i + 1 }));
+
       let supraRefs = 0, idRefs = 0;
-      for (const fn of this.footnotes) {
+      for (const fn of fo.footnotes) {
         supraRefs += (fn.text.match(/\bsupra\s+notes?\s+\d+/gi) || []).length;
         idRefs    += (fn.text.match(/\bId\./g) || []).length;
       }
-      this.stats = { total: this.footnotes.length, supraRefs, idRefs };
-
-      this.issues   = this.validateCitations(this.footnotes);
-      this.analyzed = true;
+      fo.stats    = { total: fo.footnotes.length, supraRefs, idRefs };
+      fo.issues   = this.validateCitations(fo.footnotes);
+      fo.analyzed = true;
     },
 
     /**
      * Recursively extract visible text from a Word XML node.
-     * Skips instrText, footnoteRef, endnoteRef.
+     * Skips instrText, footnoteRef, endnoteRef, and footnote-reference runs.
+     * Adds a space between <w:p> paragraph elements.
      */
     extractText(node) {
       const SKIP = new Set(['instrText', 'footnoteRef', 'endnoteRef', 'rPr', 'pPr', 'sectPr', 'fldChar']);
       let text = '';
       for (const child of node.childNodes) {
         const ln = (child.localName || '').toLowerCase();
-        if (child.nodeType === Node.TEXT_NODE) continue; // raw XML text nodes
+        if (child.nodeType === Node.TEXT_NODE) continue;
         if (SKIP.has(ln)) continue;
         if (ln === 't') {
           text += child.textContent;
@@ -731,13 +831,67 @@ function app() {
           text += ' ';
         } else if (ln === 'br') {
           text += ' ';
+        } else if (ln === 'p') {
+          // Keep paragraphs within a footnote separated by a space
+          const paraText = this.extractText(child);
+          if (paraText) {
+            if (text) text += ' ';
+            text += paraText;
+          }
+        } else if (ln === 'r') {
+          // Skip the auto-number reference-mark run at the top of every footnote body
+          if (!this._isFootnoteRefRun(child)) text += this.extractText(child);
         } else if (child.childNodes && child.childNodes.length > 0) {
           text += this.extractText(child);
         }
       }
-      // Some Word footnote styles insert ". " (period-space) right after the
-      // footnote reference mark superscript. Strip that leading artifact.
       return text.trim().replace(/^\.\s*/, '');
+    },
+
+    /**
+     * Returns true if a <w:r> run is solely a footnote/endnote reference mark
+     * (the auto-numbered superscript that appears at the start of every footnote body).
+     * Detects both the rStyle="FootnoteReference" convention and the fallback of
+     * a superscript run whose text is only digits.
+     */
+    _isFootnoteRefRun(rNode) {
+      let hasSuperscript = false;
+      let textContent   = '';
+      for (const child of rNode.childNodes) {
+        const ln = (child.localName || '').toLowerCase();
+        if (ln === 'rpr') {
+          for (const rc of child.childNodes) {
+            const rln = (rc.localName || '').toLowerCase();
+            if (rln === 'rstyle') {
+              const val = rc.getAttribute('w:val') || '';
+              if (val === 'FootnoteReference' || val === 'EndnoteReference') return true;
+            }
+            if (rln === 'vertalign') {
+              const val = rc.getAttribute('w:val') || '';
+              if (val === 'superscript') hasSuperscript = true;
+            }
+          }
+        } else if (ln === 't') {
+          textContent += child.textContent;
+        }
+      }
+      // Fallback: a superscript run containing only digits → treat as ref mark
+      return hasSuperscript && /^\d+$/.test(textContent.trim());
+    },
+
+    /**
+     * Returns true if a footnote node contains a <w:footnoteRef/> element
+     * anywhere in its subtree.  Custom-mark footnotes (e.g., "* Author note")
+     * use a literal <w:t>*</w:t> instead of <w:footnoteRef/> and therefore
+     * return false.  Word does NOT include custom-mark footnotes in its
+     * sequential auto-number count; we must exclude them for the same reason.
+     */
+    _hasFootnoteRef(node) {
+      if ((node.localName || '').toLowerCase() === 'footnoteref') return true;
+      for (const child of node.childNodes) {
+        if (child.nodeType !== Node.TEXT_NODE && this._hasFootnoteRef(child)) return true;
+      }
+      return false;
     },
 
     /* ── Citation validation ───────────────────────────────────────────── */
@@ -749,15 +903,9 @@ function app() {
       const fnMap  = new Map(footnotes.map(f => [f.num, f]));
       const issues = [];
 
-      // prevAuth tracks what the "current authority" is after each footnote,
-      // so we can validate Id. in subsequent footnotes.
-      // null  → no citation has been seen yet
-      // { fnNum, isAmbiguous }
       let prevAuth = null;
 
       // ── Pre-pass: collect hereinafter definitions and usages ───────────
-      // hereDefMap: term → fnNum where [hereinafter term] is defined
-      // hereUseSet: terms that actually appear in at least one other footnote
       const hereDefMap = new Map();
       const hereUseSet = new Set();
       for (const { text: dText, num: dNum } of footnotes) {
@@ -781,7 +929,7 @@ function app() {
         const { num, text } = fn;
         const problems = [];
 
-        // ── Find all supra note N refs in this footnote ──────────────────
+        // ── Find all supra note N refs ───────────────────────────────────
         const supraMatches = [];
         const supraRe = /\bsupra\s+notes?\s+(\d+)/gi;
         let m;
@@ -789,14 +937,14 @@ function app() {
           supraMatches.push({ refNum: parseInt(m[1], 10), fullMatch: m[0], matchEnd: m.index + m[0].length });
         }
 
-        // ── Find all Id. refs in this footnote ───────────────────────────
+        // ── Find all Id. refs ────────────────────────────────────────────
         const idMatches = [];
         const idRe = /\bId\./g;
         while ((m = idRe.exec(text)) !== null) {
           idMatches.push({ fullMatch: m[0] });
         }
 
-        // ── Validate each supra ref ───────────────────────────────────────
+        // ── Validate each supra ref ──────────────────────────────────────
         for (const ref of supraMatches) {
           if (!fnNums.has(ref.refNum)) {
             problems.push({
@@ -811,7 +959,6 @@ function app() {
               msg:  `"${ref.fullMatch}" — cannot reference note ${ref.refNum}, which comes at or after this footnote (${num}).`,
             });
           } else {
-            // Check the target footnote isn't itself a short citation
             const target     = fnMap.get(ref.refNum);
             const targetTrim = target.text.replace(/^\s*(?:See(?: also)?|But see|Accord|E\.g\.,?)\s+/i, '');
             const targetIsId    = /^Id\./i.test(targetTrim);
@@ -841,7 +988,6 @@ function app() {
                 msg:  `"${ref.fullMatch}" — Bluebook prohibits supra for constitutions; cite directly (R. 11, R. 4.2).`,
               });
             } else {
-              // Check for pincite: text after the match should have ", at N" or "at N"
               const afterMatch = text.slice(ref.matchEnd);
               const hasPincite = /^[\s,]*at\s+[\d*§]/.test(afterMatch);
               if (!hasPincite) {
@@ -855,7 +1001,7 @@ function app() {
           }
         }
 
-        // ── Validate each Id. ref ─────────────────────────────────────────
+        // ── Validate each Id. ref ────────────────────────────────────────
         for (const ref of idMatches) {
           if (prevAuth === null) {
             problems.push({
@@ -874,9 +1020,7 @@ function app() {
           }
         }
 
-        // ── Id. chain staleness ───────────────────────────────────────────
-        // Bluebook R. 4.1: Id. becomes confusing when the source is too many
-        // footnotes back. Fire once per footnote (not per Id. occurrence).
+        // ── Id. chain staleness ──────────────────────────────────────────
         if (idMatches.length > 0 && prevAuth !== null && !prevAuth.isAmbiguous
             && (num - prevAuth.fnNum) > 5) {
           problems.push({
@@ -886,8 +1030,11 @@ function app() {
           });
         }
 
-        // ── Terminal period ───────────────────────────────────────────────
-        if (!/[.!?]['")]*$/.test(text.trim())) {
+        // ── Terminal period ──────────────────────────────────────────────
+        // Skip check if the footnote ends with a bare URL — Bluebook R. 18.2.2
+        // advises against adding punctuation after URLs to avoid reader confusion.
+        const endsWithUrl = /https?:\/\/\S+$/.test(text.trim());
+        if (!endsWithUrl && !/[.!?]['"\u2019\u201d)]*$/.test(text.trim())) {
           problems.push({
             type: 'warning',
             rule: 'FOOTNOTE_NO_PERIOD',
@@ -895,8 +1042,7 @@ function app() {
           });
         }
 
-        // ── Cf. without explanatory parenthetical ─────────────────────────
-        // "But cf." is a separate signal handled below.
+        // ── Cf. without explanatory parenthetical ────────────────────────
         if (/\bcf\./i.test(text) && !/\bbut\s+cf\./i.test(text)) {
           if (!this._hasExplanatoryParen(text)) {
             problems.push({
@@ -907,7 +1053,7 @@ function app() {
           }
         }
 
-        // ── But cf. without explanatory parenthetical ─────────────────────
+        // ── But cf. without explanatory parenthetical ────────────────────
         if (/\bbut\s+cf\./i.test(text)) {
           if (!this._hasExplanatoryParen(text)) {
             problems.push({
@@ -918,7 +1064,7 @@ function app() {
           }
         }
 
-        // ── Compare...with... needs parentheticals on both sides ──────────
+        // ── Compare...with... needs parentheticals on both sides ─────────
         if (/\bcompare\b.+?\bwith\b/i.test(text)) {
           if (this._countExplanatoryParens(text) < 2) {
             problems.push({
@@ -929,7 +1075,7 @@ function app() {
           }
         }
 
-        // ── Hereinafter defined but never used ────────────────────────────
+        // ── Hereinafter defined but never used ───────────────────────────
         {
           const hRe = /\[hereinafter\s+([^\]]+)\]/gi;
           let hm;
@@ -956,26 +1102,32 @@ function app() {
           }
         }
 
-        // ── Direct quote without pincite ──────────────────────────────────
-        const hasQuote = /[\u201c\u0022][^\u201c\u201d\u0022]{8,}[\u201d\u0022]/.test(text);
-        if (hasQuote) {
-          const hasPincite =
-            /\bat\s+\*?\d+/.test(text) ||
-            /\d+\s+(?:U\.S\.|F\.[234]?d|F\.Supp\.[23]?d|Cal\.|N\.Y\.|Tex\.)\s+\d+\s*,\s*\d+/.test(text) ||
-            /,\s*\d{1,4}\s*(?:\(\d{4}\)|$)/.test(text);
-          if (!hasPincite) {
-            problems.push({
-              type: 'warning',
-              rule: 'QUOTE_NO_PINCITE',
-              msg:  'Direct quote detected without an apparent pincite (Bluebook R. 3.2 requires a pincite for quoted material).',
-            });
+        // ── Direct quote without pincite ─────────────────────────────────
+        // Use exec() so we can inspect the quoted content before flagging.
+        const quoteMatch = /[\u201c\u0022]([^\u201c\u201d\u0022]{8,})[\u201d\u0022]/.exec(text);
+        if (quoteMatch) {
+          const quotedContent = quoteMatch[1];
+          // Article titles in citations often contain "Quoted Terms" or
+          // "Coined Phrases" — short, Title-Case phrases with no lowercase words.
+          // A real block quote has sentence-like content: multiple lowercase words.
+          const lcWordCount = (quotedContent.match(/\b[a-z]{4,}/g) || []).length;
+          const isLikelyDirectQuote = lcWordCount >= 2 || quotedContent.length >= 40;
+          if (isLikelyDirectQuote) {
+            const hasPincite =
+              /\bat\s+\*?\d+/.test(text) ||
+              /\d+\s+(?:U\.S\.|F\.[234]?d|F\.Supp\.[23]?d|Cal\.|N\.Y\.|Tex\.)\s+\d+\s*,\s*\d+/.test(text) ||
+              /,\s*\d{1,4}\s*(?:\(\d{4}\)|$)/.test(text);
+            if (!hasPincite) {
+              problems.push({
+                type: 'warning',
+                rule: 'QUOTE_NO_PINCITE',
+                msg:  'Direct quote detected without an apparent pincite (Bluebook R. 3.2 requires a pincite for quoted material).',
+              });
+            }
           }
         }
 
-        // ── Update prevAuth for the next footnote ─────────────────────────
-        // Rule: if this footnote contains ONLY Id. citations (no supra, no
-        // other text besides "see" signals), the prevAuth remains the same.
-        // Otherwise, re-evaluate the source count.
+        // ── Update prevAuth for the next footnote ────────────────────────
         const onlyId = idMatches.length > 0 && supraMatches.length === 0
           && this.looksLikeOnlyId(text);
 
@@ -983,7 +1135,6 @@ function app() {
           const srcCount = this.estimateSourceCount(text);
           prevAuth = { fnNum: num, isAmbiguous: srcCount > 1 };
         }
-        // else prevAuth stays the same
 
         if (problems.length > 0) {
           issues.push({ footnoteNum: num, text, problems });
@@ -993,36 +1144,18 @@ function app() {
       return issues;
     },
 
-    /**
-     * Returns true if the footnote text appears to be ONLY an Id. citation
-     * (possibly with "See" prefix and pinpoint), so prevAuth should not change.
-     */
     looksLikeOnlyId(text) {
       const stripped = text.replace(/^\s*(?:See(?: also)?|But see|Accord|E\.g\.,?),?\s+/i, '').trim();
       if (!/^Id\./.test(stripped)) return false;
-      // Only treat as multi-source if there's a semicolon OUTSIDE parentheses
       return !this._hasSemiOutsideParens(stripped);
     },
 
-    /**
-     * Heuristic: count how many distinct sources are likely cited.
-     *
-     * A semicolon is a citation separator only when the text segment
-     * BEFORE it looks like a completed citation — i.e. it already contains
-     * a case "v.", a law-review year "(YYYY)", a URL, or a statute marker.
-     * This correctly ignores semicolons inside article subtitles (e.g.
-     * "2024 Predictions; 2025 Perceptions") and inside parentheticals.
-     */
     estimateSourceCount(text) {
       const semis   = this._countCitationSemis(text);
       const signals = (text.match(/\b(?:see also|but see|compare|accord|contra)\b/gi) || []).length;
       return 1 + semis + signals;
     },
 
-    /**
-     * Count semicolons at paren-depth 0 where the segment before the semicolon
-     * looks like a completed citation.
-     */
     _countCitationSemis(text) {
       let depth = 0, count = 0, segStart = 0;
       for (let i = 0; i < text.length; i++) {
@@ -1037,13 +1170,6 @@ function app() {
       return count;
     },
 
-    /**
-     * True if `seg` contains hallmarks of a completed legal citation:
-     *   • case name "v."
-     *   • law-review terminal year "(2024)"  ← exactly 4 digits inside parens
-     *   • a URL
-     *   • a statute marker (U.S.C., § N, Pub. L.)
-     */
     _completedCitation(seg) {
       return (
         /\bv\.\s/.test(seg)                          ||
@@ -1053,21 +1179,15 @@ function app() {
       );
     },
 
-    /**
-     * True if `text` contains an explanatory parenthetical — a paren opened
-     * with a gerund phrase (arguing, holding, noting, etc.).
-     */
     _hasExplanatoryParen(text) {
       return /\(\s*(?:not|hold|find|argu|explain|discuss|stat|conclud|recogniz|describ|reject|suggest|show|consider|analyz|emphasiz|acknowledg|observ|review|address|introduc|establish|provid|contend|assert|propos|distinguish|compar|contrast|determin|defin|identif|requir|limit|restrict|permit|prohibit|allow|interpret|evaluat|indicat|demonstrat|highlight|confirm|affirm|cit|detail|exam|explor|apply)ing\b/i.test(text);
     },
 
-    /** Count how many explanatory parentheticals (gerund-opener) appear in text. */
     _countExplanatoryParens(text) {
       const re = /\(\s*(?:not|hold|find|argu|explain|discuss|stat|conclud|recogniz|describ|reject|suggest|show|consider|analyz|emphasiz|acknowledg|observ|review|address|introduc|establish|provid|contend|assert|propos|distinguish|compar|contrast|determin|defin|identif|requir|limit|restrict|permit|prohibit|allow|interpret|evaluat|indicat|demonstrat|highlight|confirm|affirm|cit|detail|exam|explor|apply)ing\b/gi;
       return (text.match(re) || []).length;
     },
 
-    /** True if there is any semicolon outside parentheses (used by looksLikeOnlyId). */
     _hasSemiOutsideParens(text) {
       let depth = 0;
       for (const ch of text) {
@@ -1080,23 +1200,23 @@ function app() {
 
     /* ── UI helpers ────────────────────────────────────────────────────── */
 
-    toggleFn(num) {
-      this.expandedFn = this.expandedFn === num ? null : num;
+    toggleFn(fo, num) {
+      fo.expandedFn = fo.expandedFn === num ? null : num;
     },
 
-    dismissIssue(footnoteNum) {
-      const issue = this.issues.find(f => f.footnoteNum === footnoteNum);
+    dismissIssue(fo, footnoteNum) {
+      const issue = fo.issues.find(f => f.footnoteNum === footnoteNum);
       if (issue) issue.dismissed = true;
-      if (this.expandedFn === footnoteNum) this.expandedFn = null;
+      if (fo.expandedFn === footnoteNum) fo.expandedFn = null;
     },
 
-    restoreIssue(footnoteNum) {
-      const issue = this.issues.find(f => f.footnoteNum === footnoteNum);
+    restoreIssue(fo, footnoteNum) {
+      const issue = fo.issues.find(f => f.footnoteNum === footnoteNum);
       if (issue) issue.dismissed = false;
     },
 
-    confirmIssue(footnoteNum) {
-      const issue = this.issues.find(f => f.footnoteNum === footnoteNum);
+    confirmIssue(fo, footnoteNum) {
+      const issue = fo.issues.find(f => f.footnoteNum === footnoteNum);
       if (issue) issue.confirmed = true;
     },
 
@@ -1106,72 +1226,190 @@ function app() {
       return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     },
 
-    /**
-     * Return HTML with supra and Id. highlighted.
-     * Input is already XML-escaped via textContent, but we escape again for safety.
-     */
     highlightText(text) {
-      // Escape HTML
       const escaped = text
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-      // Highlight supra note N
       const withSupra = escaped.replace(
         /\bsupra\s+notes?\s+\d+/gi,
         m => `<mark class="hl-supra">${m}</mark>`
       );
-      // Highlight Id.
-      const withId = withSupra.replace(
+      return withSupra.replace(
         /\bId\./g,
         m => `<mark class="hl-id">${m}</mark>`
       );
-      return withId;
     },
 
     /* ── Export ────────────────────────────────────────────────────────── */
 
-    downloadCsv() {
-      const rows = [['Footnote', 'Severity', 'Review Status', 'Rule', 'Message', 'Footnote Text Preview']];
-      for (const fn of this.issues) {
+    downloadCsv(fo) {
+      const e = this.enabledRules;
+      const enabledLabel = this.ruleGroups.filter(g => g.enabled).map(g => g.label).join(', ');
+      const rows = [
+        [`SupraDrop Citation Report — Checks: ${enabledLabel}`],
+        ['Footnote', 'Severity', 'Review Status', 'Rule', 'Message', 'Footnote Text Preview'],
+      ];
+      for (const fn of fo.issues) {
+        const visible = fn.problems.filter(p => e.has(p.rule));
+        if (!visible.length) continue;
         const status = fn.confirmed ? 'confirmed error' : 'unreviewed';
-        for (const p of fn.problems) {
+        for (const p of visible) {
           const preview = fn.text.slice(0, 120).replace(/\r?\n/g, ' ');
           rows.push([fn.footnoteNum, p.type, status, p.rule, p.msg, preview]);
         }
       }
       const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-      this._download(csv, 'text/csv', this.fileName.replace(/\.docx$/i, '') + '-citation-issues.csv');
+      this._download(csv, 'text/csv', fo.name.replace(/\.docx$/i, '') + '-citation-issues.csv');
     },
 
-    downloadTxt() {
+    downloadTxt(fo) {
+      const e = this.enabledRules;
+      const ec = this.fileErrorCount(fo), wc = this.fileWarningCount(fo);
+      const enabledLabel = this.ruleGroups.filter(g => g.enabled).map(g => g.label).join(', ');
       const lines = [
         `SupraDrop Citation Validation Report`,
-        `File: ${this.fileName}`,
+        `File: ${fo.name}`,
         `Generated: ${new Date().toLocaleString()}`,
+        `Checks enabled: ${enabledLabel}`,
         ``,
-        `Summary: ${this.stats.total} footnotes, ${this.stats.supraRefs} supra refs, ${this.stats.idRefs} Id. refs`,
-        `Issues: ${this.errorCount} error(s), ${this.warningCount} warning(s)`,
+        `Summary: ${fo.stats.total} footnotes, ${fo.stats.supraRefs} supra refs, ${fo.stats.idRefs} Id. refs`,
+        `Issues: ${ec} error(s), ${wc} warning(s)`,
         ``,
         `${'─'.repeat(60)}`,
         ``,
       ];
-      for (const fn of this.issues) {
+      let hasAny = false;
+      for (const fn of fo.issues) {
+        const visible = fn.problems.filter(p => e.has(p.rule));
+        if (!visible.length) continue;
+        hasAny = true;
         lines.push(`Footnote ${fn.footnoteNum}:`);
         lines.push(`  Text: ${fn.text.slice(0, 200)}${fn.text.length > 200 ? '…' : ''}`);
-        for (const p of fn.problems) {
+        for (const p of visible) {
           lines.push(`  [${p.type.toUpperCase()}] ${p.rule}: ${p.msg}`);
         }
         lines.push('');
       }
-      if (this.issues.length === 0) {
-        lines.push('No issues found. All supra and Id. citations validated successfully.');
+      if (!hasAny) {
+        lines.push('No issues found for the enabled checks.');
       }
-      this._download(lines.join('\n'), 'text/plain', this.fileName.replace(/\.docx$/i, '') + '-citation-issues.txt');
+      this._download(lines.join('\n'), 'text/plain', fo.name.replace(/\.docx$/i, '') + '-citation-issues.txt');
+    },
+
+    async downloadAnnotated(fo) {
+      if (!fo.zip || !fo.issues.length) return;
+      const enabled = this.enabledRules;
+
+      const blocks = [];
+      let nextCommentId = 1;
+      for (const issue of fo.issues) {
+        if (issue.dismissed) continue;
+        const fn = fo.footnotes.find(f => f.num === issue.footnoteNum);
+        if (!fn) continue;
+        const visible = issue.problems.filter(p => enabled.has(p.rule));
+        if (!visible.length) continue;
+        blocks.push({
+          xmlId: fn.xmlId,
+          problems: visible.map(p => ({ id: nextCommentId++, rule: p.rule, msg: p.msg, type: p.type })),
+        });
+      }
+      if (!blocks.length) { alert('No visible issues to annotate.'); return; }
+
+      // 1. Read and patch word/footnotes.xml —
+      //    Insert commentRangeStart after </w:pPr> (or after <w:p> if no pPr),
+      //    and commentRangeEnd + commentReference just before </w:p>.
+      //    Word requires the Range markers for comments to render in the sidebar.
+      let fnXml = await fo.zip.file('word/footnotes.xml').async('string');
+      for (const block of blocks) {
+        const idStr = block.xmlId.toString();
+        const tagRe = new RegExp(`<w:footnote\\b[^>]*\\bw:id="${idStr}"[^>]*>`, 'g');
+        const tagMatch = tagRe.exec(fnXml);
+        if (!tagMatch) continue;
+
+        const fnBodyStart = tagMatch.index + tagMatch[0].length;
+        // Find the first <w:p> opening inside this footnote
+        const pStart = fnXml.indexOf('<w:p', fnBodyStart);
+        if (pStart === -1) continue;
+        const pTagEnd = fnXml.indexOf('>', pStart) + 1;
+        const pClose  = fnXml.indexOf('</w:p>', pTagEnd);
+        if (pClose === -1) continue;
+
+        // Insert commentRangeStart after </w:pPr> if present, else after <w:p...>
+        const pPrClose = fnXml.indexOf('</w:pPr>', pTagEnd);
+        const startPos = (pPrClose !== -1 && pPrClose < pClose)
+          ? pPrClose + '</w:pPr>'.length
+          : pTagEnd;
+
+        const startMark = block.problems.map(p =>
+          `<w:commentRangeStart w:id="${p.id}"/>`).join('');
+        const endMark = block.problems.map(p =>
+          `<w:commentRangeEnd w:id="${p.id}"/><w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${p.id}"/></w:r>`
+        ).join('');
+
+        // Insert end mark first (higher index), then start mark (lower index)
+        fnXml = fnXml.slice(0, pClose) + endMark + fnXml.slice(pClose);
+        fnXml = fnXml.slice(0, startPos) + startMark + fnXml.slice(startPos);
+      }
+
+      // 2. Build word/comments.xml
+      const xmlEsc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+      let commentsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">`;
+      for (const block of blocks) {
+        for (const p of block.problems) {
+          const label = p.type === 'error' ? '[ERROR]' : '[WARN]';
+          commentsXml += `\n<w:comment w:id="${p.id}" w:author="SupraDrop" w:date="${now}" w:initials="SD"><w:p><w:r><w:t xml:space="preserve">${xmlEsc(`${label} ${p.rule}: ${p.msg}`)}</w:t></w:r></w:p></w:comment>`;
+        }
+      }
+      commentsXml += '\n</w:comments>';
+
+      // 3. Patch word/_rels/document.xml.rels to declare the comments part.
+      //    (Word resolves <w:commentReference> through the document-level rels,
+      //    even when the reference element lives inside footnotes.xml.)
+      const docRelsPath = 'word/_rels/document.xml.rels';
+      const cmtRel = '<Relationship Id="rIdSCmts" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/>';
+      let docRels = (await fo.zip.file(docRelsPath)?.async('string')) || '';
+      if (!docRels.includes('comments.xml')) {
+        docRels = docRels
+          ? docRels.replace('</Relationships>', cmtRel + '</Relationships>')
+          : `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${cmtRel}</Relationships>`;
+      }
+
+      // Also patch footnotes.xml.rels when it exists — some Word versions look there too.
+      const fnRelsPath = 'word/_rels/footnotes.xml.rels';
+      let fnRels = fo.zip.file(fnRelsPath) ? await fo.zip.file(fnRelsPath).async('string') : null;
+      if (fnRels && !fnRels.includes('comments.xml')) {
+        fnRels = fnRels.replace('</Relationships>',
+          cmtRel.replace('rIdSCmts', 'rIdSCmts2') + '</Relationships>');
+      }
+
+      // 4. Patch [Content_Types].xml
+      let ctXml = await fo.zip.file('[Content_Types].xml').async('string');
+      if (!ctXml.includes('comments+xml')) {
+        ctXml = ctXml.replace('</Types>', '<Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/></Types>');
+      }
+
+      // 5. Pack new zip
+      const newZip = new JSZip();
+      for (const [path, zf] of Object.entries(fo.zip.files)) {
+        if (zf.dir) continue;
+        if (path === 'word/footnotes.xml')      newZip.file(path, fnXml);
+        else if (path === '[Content_Types].xml') newZip.file(path, ctXml);
+        else if (path === docRelsPath)           newZip.file(path, docRels);
+        else if (fnRels && path === fnRelsPath)  newZip.file(path, fnRels);
+        else                                     newZip.file(path, await zf.async('arraybuffer'));
+      }
+      newZip.file('word/comments.xml', commentsXml);
+      if (!fo.zip.file(docRelsPath)) newZip.file(docRelsPath, docRels);
+
+      const blob = await newZip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+      this._download(blob, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        fo.name.replace(/\.docx$/i, '') + '-annotated.docx');
     },
 
     _download(content, mimeType, filename) {
-      const blob = new Blob([content], { type: mimeType });
+      const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
