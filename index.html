@@ -622,6 +622,7 @@
       <div x-show="legendOpen.housekeeping" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>FOOTNOTE_NO_PERIOD</strong> — footnote does not end with a period.</div>
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>URL_NOT_ARCHIVED</strong> — Bluebook R. 18.2 requires a permanent, archived URL (e.g., <a href="https://permadrop.kirinchang.com/" target="_blank" rel="noopener noreferrer" style="color:var(--indigo-400,#818cf8);">PermaDrop</a> or Perma.cc).</div>
       </div>
     </div>
   </div>
@@ -666,7 +667,7 @@ function app() {
       { id: 'pincites',     label: 'Quotes',        enabled: true,
         rules: ['QUOTE_NO_PINCITE'] },
       { id: 'housekeeping', label: 'Housekeeping',  enabled: true,
-        rules: ['FOOTNOTE_NO_PERIOD','HEREINAFTER_NEVER_USED'] },
+        rules: ['FOOTNOTE_NO_PERIOD','HEREINAFTER_NEVER_USED','URL_NOT_ARCHIVED'] },
     ],
 
     // Legend accordion state
@@ -1043,6 +1044,21 @@ function app() {
           });
         }
 
+        // ── Unarchived URL (Bluebook R. 18.2) ───────────────────────────
+        // Any URL in a footnote should be a permanent/archived link.
+        const urlMatch = /https?:\/\/\S+/.exec(text);
+        if (urlMatch) {
+          const url = urlMatch[0].replace(/[.,;)\]'"]+$/, ''); // strip trailing punctuation
+          const isArchived = /^https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i.test(url);
+          if (!isArchived) {
+            problems.push({
+              type: 'warning',
+              rule: 'URL_NOT_ARCHIVED',
+              msg:  `Bluebook R. 18.2 requires a permanent, archived URL. Consider archiving with PermaDrop (permadrop.kirinchang.com) or Perma.cc.`,
+            });
+          }
+        }
+
         // ── Cf. without explanatory parenthetical ────────────────────────
         if (/\bcf\./i.test(text) && !/\bbut\s+cf\./i.test(text)) {
           if (!this._hasExplanatoryParen(text)) {
@@ -1354,7 +1370,7 @@ function app() {
       for (const block of blocks) {
         for (const p of block.problems) {
           const label = p.type === 'error' ? '[ERROR]' : '[WARN]';
-          commentsXml += `\n<w:comment w:id="${p.id}" w:author="SupraDrop" w:date="${now}" w:initials="SD"><w:p><w:r><w:t xml:space="preserve">${xmlEsc(`${label} ${p.rule}: ${p.msg}`)}</w:t></w:r></w:p></w:comment>`;
+          commentsXml += `\n<w:comment w:id="${p.id}" w:author="SupraDrop by Kirin" w:date="${now}" w:initials="SK"><w:p><w:r><w:t xml:space="preserve">${xmlEsc(`${label} ${p.rule}: ${p.msg}`)}</w:t></w:r></w:p></w:comment>`;
         }
       }
       commentsXml += '\n</w:comments>';
