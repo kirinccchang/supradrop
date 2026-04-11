@@ -1117,7 +1117,7 @@ function app() {
             const hasPincite =
               /\bat\s+\*?\d+/.test(text) ||
               /\d+\s+(?:U\.S\.|F\.[234]?d|F\.Supp\.[23]?d|Cal\.|N\.Y\.|Tex\.)\s+\d+\s*,\s*\d+/.test(text) ||
-              /,\s*\d{1,4}\s*(?:\(\d{4}\)|$)/.test(text);
+              /,\s*\d{1,4}(?:\s+n\.\d+(?:\.\d+)?)?\s*(?:\(\d{4}\)|$)/.test(text);
             if (!hasPincite) {
               problems.push({
                 type: 'warning',
@@ -1317,30 +1317,24 @@ function app() {
       }
       if (!blocks.length) { alert('No visible issues to annotate.'); return; }
 
-      // 1. Read and patch word/footnotes.xml —
-      //    Insert commentRangeStart after </w:pPr> (or after <w:p> if no pPr),
-      //    and commentRangeEnd + commentReference just before </w:p>.
-      //    Word requires the Range markers for comments to render in the sidebar.
-      let fnXml = await fo.zip.file('word/footnotes.xml').async('string');
+      // 1. Inject comment anchors into word/document.xml at each <w:footnoteReference> run.
+      //    Comments must be anchored in document.xml (body), not in footnotes.xml —
+      //    Word does not render sidebar comments anchored inside footnote part XML.
+      let docXml = await fo.zip.file('word/document.xml').async('string');
       for (const block of blocks) {
         const idStr = block.xmlId.toString();
-        const tagRe = new RegExp(`<w:footnote\\b[^>]*\\bw:id="${idStr}"[^>]*>`, 'g');
-        const tagMatch = tagRe.exec(fnXml);
-        if (!tagMatch) continue;
+        // Locate <w:footnoteReference w:id="N" .../>
+        const fnRefRe = new RegExp(`<w:footnoteReference\\b[^>]*\\bw:id="${idStr}"[^>]*/>`);
+        const fnRefMatch = fnRefRe.exec(docXml);
+        if (!fnRefMatch) continue;
+        const fnRefIdx = fnRefMatch.index;
 
-        const fnBodyStart = tagMatch.index + tagMatch[0].length;
-        // Find the first <w:p> opening inside this footnote
-        const pStart = fnXml.indexOf('<w:p', fnBodyStart);
-        if (pStart === -1) continue;
-        const pTagEnd = fnXml.indexOf('>', pStart) + 1;
-        const pClose  = fnXml.indexOf('</w:p>', pTagEnd);
-        if (pClose === -1) continue;
-
-        // Insert commentRangeStart after </w:pPr> if present, else after <w:p...>
-        const pPrClose = fnXml.indexOf('</w:pPr>', pTagEnd);
-        const startPos = (pPrClose !== -1 && pPrClose < pClose)
-          ? pPrClose + '</w:pPr>'.length
-          : pTagEnd;
+        // Find the enclosing <w:r> ... </w:r>
+        const rStart = docXml.lastIndexOf('<w:r', fnRefIdx);
+        if (rStart === -1) continue;
+        const rEnd = docXml.indexOf('</w:r>', fnRefIdx);
+        if (rEnd === -1) continue;
+        const rClose = rEnd + '</w:r>'.length;
 
         const startMark = block.problems.map(p =>
           `<w:commentRangeStart w:id="${p.id}"/>`).join('');
@@ -1348,9 +1342,9 @@ function app() {
           `<w:commentRangeEnd w:id="${p.id}"/><w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${p.id}"/></w:r>`
         ).join('');
 
-        // Insert end mark first (higher index), then start mark (lower index)
-        fnXml = fnXml.slice(0, pClose) + endMark + fnXml.slice(pClose);
-        fnXml = fnXml.slice(0, startPos) + startMark + fnXml.slice(startPos);
+        // Insert end first (higher offset), then start (lower offset)
+        docXml = docXml.slice(0, rClose) + endMark + docXml.slice(rClose);
+        docXml = docXml.slice(0, rStart) + startMark + docXml.slice(rStart);
       }
 
       // 2. Build word/comments.xml
@@ -1377,14 +1371,6 @@ function app() {
           : `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${cmtRel}</Relationships>`;
       }
 
-      // Also patch footnotes.xml.rels when it exists — some Word versions look there too.
-      const fnRelsPath = 'word/_rels/footnotes.xml.rels';
-      let fnRels = fo.zip.file(fnRelsPath) ? await fo.zip.file(fnRelsPath).async('string') : null;
-      if (fnRels && !fnRels.includes('comments.xml')) {
-        fnRels = fnRels.replace('</Relationships>',
-          cmtRel.replace('rIdSCmts', 'rIdSCmts2') + '</Relationships>');
-      }
-
       // 4. Patch [Content_Types].xml
       let ctXml = await fo.zip.file('[Content_Types].xml').async('string');
       if (!ctXml.includes('comments+xml')) {
@@ -1395,10 +1381,9 @@ function app() {
       const newZip = new JSZip();
       for (const [path, zf] of Object.entries(fo.zip.files)) {
         if (zf.dir) continue;
-        if (path === 'word/footnotes.xml')      newZip.file(path, fnXml);
+        if (path === 'word/document.xml')        newZip.file(path, docXml);
         else if (path === '[Content_Types].xml') newZip.file(path, ctXml);
         else if (path === docRelsPath)           newZip.file(path, docRels);
-        else if (fnRels && path === fnRelsPath)  newZip.file(path, fnRels);
         else                                     newZip.file(path, await zf.async('arraybuffer'));
       }
       newZip.file('word/comments.xml', commentsXml);
