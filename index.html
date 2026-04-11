@@ -1085,29 +1085,25 @@ function app() {
         }
 
         // ── Unarchived URL (Bluebook R. 18.2) ───────────────────────────
-        // Bluebook pattern: original URL followed by [archived URL] in brackets.
-        // Flag only if a non-archived URL lacks a bracketed archived counterpart.
-        const ARCHIVED_HOST = /^https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i;
-        const allUrlRe = /https?:\/\/[^\s\]]+/g;
-        let hasUnarchivedUrl = false;
-        let uM;
-        while ((uM = allUrlRe.exec(text)) !== null) {
-          const url = uM[0].replace(/[.,;)'"]+$/, '');
-          if (ARCHIVED_HOST.test(url)) continue; // this URL itself is archived
-          // Check if a bracketed archived URL appears before the next semicolon.
-          // Covers both "URL [archive]" and "URL (last visited …) [archive]".
-          const after = text.slice(uM.index + uM[0].length);
-          const upToNextCite = after.split(/\s*;\s*/)[0];
-          if (/\[https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i.test(upToNextCite)) continue;
-          hasUnarchivedUrl = true;
-          break;
-        }
-        if (hasUnarchivedUrl) {
-          problems.push({
-            type: 'warning',
-            rule: 'URL_NOT_ARCHIVED',
-            msg:  `Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). <a href="https://permadrop.kirinchang.com/" target="_blank" rel="noopener noreferrer">PermaDrop</a> can help you create one.`,
-          });
+        // Collect every URL in the footnote, then check whether the set
+        // contains any archived host. If there are non-archived URLs but
+        // no archived URLs at all, flag — regardless of position.
+        {
+          const ARCHIVED_HOST = /^https?:\/\/(?:perma\.cc|web\.archive\.org|archive\.org|archive\.ph|archive\.today|doi\.org)\//i;
+          const urlRe = /https?:\/\/[^\s"'<>]+/g;
+          let uM2, hasNonArchived = false, hasArchived = false;
+          while ((uM2 = urlRe.exec(text)) !== null) {
+            const url = uM2[0].replace(/[.,;)\]'"]+$/, '');
+            if (ARCHIVED_HOST.test(url)) { hasArchived = true; }
+            else { hasNonArchived = true; }
+          }
+          if (hasNonArchived && !hasArchived) {
+            problems.push({
+              type: 'warning',
+              rule: 'URL_NOT_ARCHIVED',
+              msg:  `Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). <a href="https://permadrop.kirinchang.com/" target="_blank" rel="noopener noreferrer">PermaDrop</a> can help you create one.`,
+            });
+          }
         }
 
         // ── Cf. without explanatory parenthetical ────────────────────────
