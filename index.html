@@ -541,6 +541,8 @@
         <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>SUPRA_TO_SHORT_CITE</strong> — <em>supra note N</em> where footnote N itself starts with a short citation (Id. or supra), not a full citation.</div>
         <div><span class="badge badge-error" style="margin-right:8px;">error</span> <strong>ID_NO_PRECEDING</strong> — <em>Id.</em> with no preceding citation to reference.</div>
         <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>ID_AMBIGUOUS</strong> — <em>Id.</em> following a footnote that appears to cite multiple sources; the referent is ambiguous.</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>SEE_GEN_NO_PAREN</strong> — <em>See generally</em> without an explanatory parenthetical; Bluebook strongly prefers one (e.g., <em>(arguing that...)</em>).</div>
+        <div><span class="badge badge-warning" style="margin-right:8px;">warn</span> <strong>QUOTE_NO_PINCITE</strong> — Direct quote without an apparent pincite; Bluebook R. 3.2 requires a pincite for all quoted material.</div>
       </div>
     </div>
   </div>
@@ -813,6 +815,33 @@ function app() {
           }
         }
 
+        // ── "See generally" without explanatory parenthetical ────────────
+        if (/\bsee\s+generally\b/i.test(text)) {
+          if (!this._hasExplanatoryParen(text)) {
+            problems.push({
+              type: 'warning',
+              rule: 'SEE_GEN_NO_PAREN',
+              msg:  '"See generally" — Bluebook strongly prefers an explanatory parenthetical (e.g., (arguing that...)).',
+            });
+          }
+        }
+
+        // ── Direct quote without pincite ──────────────────────────────────
+        const hasQuote = /[\u201c\u0022][^\u201c\u201d\u0022]{8,}[\u201d\u0022]/.test(text);
+        if (hasQuote) {
+          const hasPincite =
+            /\bat\s+\*?\d+/.test(text) ||
+            /\d+\s+(?:U\.S\.|F\.[234]?d|F\.Supp\.[23]?d|Cal\.|N\.Y\.|Tex\.)\s+\d+\s*,\s*\d+/.test(text) ||
+            /,\s*\d{1,4}\s*(?:\(\d{4}\)|$)/.test(text);
+          if (!hasPincite) {
+            problems.push({
+              type: 'warning',
+              rule: 'QUOTE_NO_PINCITE',
+              msg:  'Direct quote detected without an apparent pincite (Bluebook R. 3.2 requires a pincite for quoted material).',
+            });
+          }
+        }
+
         // ── Update prevAuth for the next footnote ─────────────────────────
         // Rule: if this footnote contains ONLY Id. citations (no supra, no
         // other text besides "see" signals), the prevAuth remains the same.
@@ -892,6 +921,14 @@ function app() {
         /https?:\/\//.test(seg)                      ||
         /\b(U\.S\.C\.|§\s*\d|Pub\. L\.)/.test(seg)
       );
+    },
+
+    /**
+     * True if `text` contains an explanatory parenthetical — a paren opened
+     * with a gerund phrase (arguing, holding, noting, etc.).
+     */
+    _hasExplanatoryParen(text) {
+      return /\(\s*(?:not|hold|find|argu|explain|discuss|stat|conclud|recogniz|describ|reject|suggest|show|consider|analyz|emphasiz|acknowledg|observ|review|address|introduc|establish|provid|contend|assert|propos|distinguish|compar|contrast|determin|defin|identif|requir|limit|restrict|permit|prohibit|allow|interpret|evaluat|indicat|demonstrat|highlight|confirm|affirm|cit|detail|exam|explor|apply)ing\b/i.test(text);
     },
 
     /** True if there is any semicolon outside parentheses (used by looksLikeOnlyId). */
