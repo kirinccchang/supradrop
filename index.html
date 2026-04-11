@@ -221,6 +221,12 @@
     .all-clear p { font-size: 14px; color: var(--ok-text); font-weight: 500; }
     .all-clear .all-clear-sub { font-size: 12px; margin-top: 4px; opacity: 0.8; }
 
+    /* Dismissed items section */
+    .dismissed-toggle { background: none; border: none; color: var(--text-faint); font-size: 12px; cursor: pointer; padding: 4px 0; }
+    .dismissed-toggle:hover { color: var(--text-muted); }
+    .dismissed-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 4px; background: var(--preview-bg); }
+    .dismissed-text { flex: 1; font-size: 11px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; }
+
     /* Preceding-footnote context block inside an issue card */
     .issue-prev-ctx { padding: 0 14px 10px; }
     .issue-ctx-label { padding: 6px 14px 2px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-faint); }
@@ -394,7 +400,7 @@
 
         <!-- Issues tab -->
         <div x-show="activeTab === 'issues' && issues.length > 0">
-          <template x-for="fn in issues" :key="fn.footnoteNum">
+          <template x-for="fn in issues.filter(f => !f.dismissed)" :key="fn.footnoteNum">
             <div class="issue-group" :class="fn.confirmed ? 'confirmed' : ''">
               <div class="issue-group-header" @click="toggleFn(fn.footnoteNum)">
                 <span class="issue-fn-num" x-text="'fn. ' + fn.footnoteNum"></span>
@@ -463,8 +469,24 @@
           </template>
         </div>
 
+        <!-- Dismissed section -->
+        <div x-show="activeTab === 'issues' && issues.filter(f => f.dismissed).length > 0" style="margin-top:8px;">
+          <button class="dismissed-toggle" @click="showDismissed = !showDismissed">
+            <span x-text="(showDismissed ? '▾ ' : '▸ ') + 'Dismissed (' + issues.filter(f => f.dismissed).length + ')'"></span>
+          </button>
+          <div x-show="showDismissed" x-transition style="margin-top:6px;">
+            <template x-for="fn in issues.filter(f => f.dismissed)" :key="fn.footnoteNum">
+              <div class="dismissed-row">
+                <span class="issue-fn-num" style="font-size:11px;" x-text="'fn. ' + fn.footnoteNum"></span>
+                <span class="dismissed-text" x-text="fn.text.slice(0, 80) + (fn.text.length > 80 ? '…' : '')"></span>
+                <button class="btn-ghost" style="font-size:11px; flex-shrink:0;" @click="restoreIssue(fn.footnoteNum)">Restore</button>
+              </div>
+            </template>
+          </div>
+        </div>
+
         <!-- Issues tab — no issues -->
-        <div x-show="activeTab === 'issues' && issues.length === 0 && stats.total > 0">
+        <div x-show="activeTab === 'issues' && issues.filter(f=>!f.dismissed).length === 0 && stats.total > 0">
           <div class="all-clear">
             <p>No issues to display.</p>
           </div>
@@ -560,9 +582,10 @@ function app() {
     stats:     { total:0, supraRefs:0, idRefs:0 },
 
     // UI
-    darkMode:   false,
-    expandedFn: null,
-    activeTab:  'issues',
+    darkMode:     false,
+    expandedFn:   null,
+    activeTab:    'issues',
+    showDismissed: false,
 
     init() {
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -889,8 +912,14 @@ function app() {
     },
 
     dismissIssue(footnoteNum) {
-      this.issues = this.issues.filter(f => f.footnoteNum !== footnoteNum);
+      const issue = this.issues.find(f => f.footnoteNum === footnoteNum);
+      if (issue) issue.dismissed = true;
       if (this.expandedFn === footnoteNum) this.expandedFn = null;
+    },
+
+    restoreIssue(footnoteNum) {
+      const issue = this.issues.find(f => f.footnoteNum === footnoteNum);
+      if (issue) issue.dismissed = false;
     },
 
     confirmIssue(footnoteNum) {
