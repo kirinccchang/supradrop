@@ -645,6 +645,18 @@
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote.</div>
       </div>
     </div>
+
+    <!-- Pincite format -->
+    <div style="border:1px solid var(--border); border-radius:7px; overflow:hidden;">
+      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.pincite_format = !legendOpen.pincite_format">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Pincite format</span>
+        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.pincite_format ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="legendOpen.pincite_format" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_HYPHEN</strong> — page range uses a hyphen (<code>-</code>) instead of an en-dash (<code>–</code>) as required by Bluebook R. 3.2(a).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_UNSHORTENED</strong> — ending page not shortened per Bluebook R. 3.2(a). Example: <code>1124–1129</code> should be <code>1124–29</code>.</div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -690,12 +702,14 @@ function app() {
         rules: ['FOOTNOTE_NO_PERIOD'] },
       { id: 'urls',        label: 'URLs',         enabled: true,
         rules: ['URL_NOT_ARCHIVED'] },
-      { id: 'hereinafter', label: 'Hereinafter',  enabled: true,
+      { id: 'hereinafter',    label: 'Hereinafter',  enabled: true,
         rules: ['HEREINAFTER_NEVER_USED'] },
+      { id: 'pincite_format', label: 'Pincites',     enabled: true,
+        rules: ['PINCITE_HYPHEN', 'PINCITE_UNSHORTENED'] },
     ],
 
     // Legend accordion state
-    legendOpen: { supra: false, id: false, signals: false, pincites: false, format: false, urls: false, hereinafter: false },
+    legendOpen: { supra: false, id: false, signals: false, pincites: false, format: false, urls: false, hereinafter: false, pincite_format: false },
 
     fileEnabledRules(fo) {
       return new Set((fo.ruleGroups || []).flatMap(g => g.enabled ? g.rules : []));
@@ -1191,6 +1205,43 @@ function app() {
           }
         }
 
+        // ── Pincite page range format (Bluebook R. 3.2(a)) ──────────────────
+        {
+          const pinciteRe = /\b(\d{2,4})\s*([-\u2013])\s*(\d{2,4})\b/g;
+          let pm;
+          while ((pm = pinciteRe.exec(text)) !== null) {
+            const start = parseInt(pm[1], 10);
+            const dash  = pm[2];
+            const end   = parseInt(pm[3], 10);
+            // Exclusion 1: year ranges
+            if (start >= 1800 && start <= 2100 && end >= 1800 && end <= 2100) continue;
+            // Exclusion 2: not ascending
+            if (end <= start) continue;
+            // Exclusion 3: inside or immediately after a URL
+            if (/https?:\/\/\S*$/.test(text.slice(0, pm.index))) continue;
+            // Exclusion 4: end too small to be a meaningful pincite
+            if (end < 10) continue;
+
+            if (dash === '-') {
+              problems.push({
+                type: 'warning',
+                rule: 'PINCITE_HYPHEN',
+                msg:  `"${pm[0]}" — page spans must use an en-dash (–), not a hyphen (-). In Word: type start, two hyphens, end and Word auto-converts. Bluebook R. 3.2(a).`,
+              });
+            }
+
+            const expectedShort = this.bluebookShortEnd(start, end);
+            if (String(end).length > expectedShort.length) {
+              const dashChar = dash === '-' ? '-' : '\u2013';
+              problems.push({
+                type: 'warning',
+                rule: 'PINCITE_UNSHORTENED',
+                msg:  `"${pm[0]}" — Bluebook R. 3.2(a) requires the ending page to be shortened: write "${pm[1]}${dashChar}${expectedShort}" (retain last two digits, drop repetitious preceding digits).`,
+              });
+            }
+          }
+        }
+
         // ── Update prevAuth for the next footnote ────────────────────────
         const onlyId = idMatches.length > 0 && supraMatches.length === 0
           && this.looksLikeOnlyId(text);
@@ -1250,6 +1301,23 @@ function app() {
     _countExplanatoryParens(text) {
       const re = /\(\s*(?:not|hold|find|argu|explain|discuss|stat|conclud|recogniz|describ|reject|suggest|show|consider|analyz|emphasiz|acknowledg|observ|review|address|introduc|establish|provid|contend|assert|propos|distinguish|compar|contrast|determin|defin|identif|requir|limit|restrict|permit|prohibit|allow|interpret|evaluat|indicat|demonstrat|highlight|confirm|affirm|cit|detail|exam|explor|apply)ing\b/gi;
       return (text.match(re) || []).length;
+    },
+
+    /**
+     * Bluebook R. 3.2(a): compute the correctly shortened ending page number.
+     * Retains the last two digits; drops preceding digits that repeat the
+     * corresponding digits of the starting page from the left.
+     * Examples: 1124→1129 gives "29"; 104→107 gives "07"; 99→101 gives "101".
+     */
+    bluebookShortEnd(start, end) {
+      const s = String(start), e = String(end);
+      let prefixLen = 0;
+      for (let i = 0; i < Math.min(s.length, e.length); i++) {
+        if (s[i] === e[i]) prefixLen++;
+        else break;
+      }
+      const condensed = e.slice(prefixLen);
+      return condensed.length >= 2 ? condensed : e.slice(-2);
     },
 
     _hasSemiOutsideParens(text) {
