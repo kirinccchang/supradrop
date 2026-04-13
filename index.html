@@ -610,6 +610,8 @@
       </button>
       <div x-show="legendOpen.pincites" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>QUOTE_NO_PINCITE</strong> — direct quote detected without a pincite; Bluebook R. 3.2 requires one.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_HYPHEN</strong> — page range uses a hyphen (<code>-</code>) instead of an en-dash (<code>–</code>) as required by Bluebook R. 3.2(a).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_UNSHORTENED</strong> — ending page not shortened per Bluebook R. 3.2(a). Example: <code>1124–1129</code> should be <code>1124–29</code>.</div>
       </div>
     </div>
 
@@ -646,17 +648,6 @@
       </div>
     </div>
 
-    <!-- Pincite format -->
-    <div style="border:1px solid var(--border); border-radius:7px; overflow:hidden;">
-      <button style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:transparent; border:none; cursor:pointer; text-align:left;" @click="legendOpen.pincite_format = !legendOpen.pincite_format">
-        <span style="font-size:13px; font-weight:600; color:var(--text);">Pincite format</span>
-        <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.pincite_format ? '▲' : '▼'"></span>
-      </button>
-      <div x-show="legendOpen.pincite_format" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_HYPHEN</strong> — page range uses a hyphen (<code>-</code>) instead of an en-dash (<code>–</code>) as required by Bluebook R. 3.2(a).</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_UNSHORTENED</strong> — ending page not shortened per Bluebook R. 3.2(a). Example: <code>1124–1129</code> should be <code>1124–29</code>.</div>
-      </div>
-    </div>
   </div>
 
 </div>
@@ -696,20 +687,18 @@ function app() {
         rules: ['ID_NO_PRECEDING','ID_AMBIGUOUS','ID_STALE'] },
       { id: 'signals',     label: 'Signals',      enabled: true,
         rules: ['SEE_GEN_NO_PAREN','CF_NO_PAREN','BUT_CF_NO_PAREN','COMPARE_WITH_NO_PAREN'] },
-      { id: 'pincites',    label: 'Quotes',       enabled: true,
-        rules: ['QUOTE_NO_PINCITE'] },
+      { id: 'pincites',    label: 'Quotes & Pincites', enabled: true,
+        rules: ['QUOTE_NO_PINCITE', 'PINCITE_HYPHEN', 'PINCITE_UNSHORTENED'] },
       { id: 'format',      label: 'Format',       enabled: true,
         rules: ['FOOTNOTE_NO_PERIOD'] },
       { id: 'urls',        label: 'URLs',         enabled: true,
         rules: ['URL_NOT_ARCHIVED'] },
-      { id: 'hereinafter',    label: 'Hereinafter',  enabled: true,
+      { id: 'hereinafter', label: 'Hereinafter',  enabled: true,
         rules: ['HEREINAFTER_NEVER_USED'] },
-      { id: 'pincite_format', label: 'Pincites',     enabled: true,
-        rules: ['PINCITE_HYPHEN', 'PINCITE_UNSHORTENED'] },
     ],
 
     // Legend accordion state
-    legendOpen: { supra: false, id: false, signals: false, pincites: false, format: false, urls: false, hereinafter: false, pincite_format: false },
+    legendOpen: { supra: false, id: false, signals: false, pincites: false, format: false, urls: false, hereinafter: false },
 
     fileEnabledRules(fo) {
       return new Set((fo.ruleGroups || []).flatMap(g => g.enabled ? g.rules : []));
