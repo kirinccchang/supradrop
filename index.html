@@ -567,12 +567,12 @@
         <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.supra ? '▲' : '▼'"></span>
       </button>
       <div x-show="legendOpen.supra" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_NONEXISTENT</strong> — references a footnote number that doesn't exist.</div>
-        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_FORWARD</strong> — references a later footnote (forward reference).</div>
-        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_TO_SHORT_CITE</strong> — target footnote is itself a short citation (Id. or supra), not a full citation.</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_NONEXISTENT</strong> — references a footnote number that does not exist in this document (R. 4.2).</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_FORWARD</strong> — supra must refer to an earlier footnote, not a later one (R. 4.2).</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_TO_SHORT_CITE</strong> — the referenced footnote is itself a short citation (Id. or supra); supra must point to a full citation (R. 4.2).</div>
         <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_MISMATCH</strong> — the author/title label before "supra" does not appear in the referenced footnote; the footnote number is likely wrong.</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SUPRA_NO_PINCITE</strong> — missing ", at [page]" after supra note N (Bluebook R. 4.2).</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SUPRA_WRONG_SOURCE_TYPE</strong> — target is a case, statute, or constitution; supra is prohibited for primary sources (R. 4.2).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SUPRA_NO_PINCITE</strong> — missing ", at [page]" after supra note N; R. 4.2 requires a pincite when referring to a specific page.</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>SUPRA_WRONG_SOURCE_TYPE</strong> — supra is prohibited for cases, statutes, and constitutions (R. 4.2(a)); use a short-form citation instead.</div>
       </div>
     </div>
 
@@ -583,9 +583,9 @@
         <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.id ? '▲' : '▼'"></span>
       </button>
       <div x-show="legendOpen.id" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>ID_NO_PRECEDING</strong> — Id. appears with no prior citation to refer back to.</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>ID_AMBIGUOUS</strong> — preceding footnote cites multiple sources; Id. is ambiguous (R. 4.1).</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>ID_STALE</strong> — Id. used more than 5 footnotes after the source; consider a short-form citation (R. 4.1).</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>ID_NO_PRECEDING</strong> — Id. appears with no preceding citation to reference (R. 4.1).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>ID_AMBIGUOUS</strong> — preceding footnote cites multiple sources; Id. is ambiguous about which authority it refers to (R. 4.1).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>ID_STALE</strong> — Id. used more than 5 footnotes after the source was first cited; consider a short-form citation (R. 4.1).</div>
       </div>
     </div>
 
@@ -596,10 +596,10 @@
         <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.signals ? '▲' : '▼'"></span>
       </button>
       <div x-show="legendOpen.signals" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SEE_GEN_NO_PAREN</strong> — <em>See generally</em> without an explanatory parenthetical; Bluebook strongly prefers one.</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>CF_NO_PAREN</strong> — <em>Cf.</em> always requires an explanatory parenthetical (R. 1.2).</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>BUT_CF_NO_PAREN</strong> — <em>But cf.</em> always requires an explanatory parenthetical (R. 1.2).</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>COMPARE_WITH_NO_PAREN</strong> — <em>Compare…with…</em> requires a parenthetical on each side (R. 1.2).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SEE_GEN_NO_PAREN</strong> — <em>See generally</em> without an explanatory parenthetical; R. 1.2, R. 1.5 strongly prefer one beginning with a present participle.</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>CF_NO_PAREN</strong> — <em>Cf.</em> always requires an explanatory parenthetical beginning with a present participle (R. 1.2, R. 1.5).</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>BUT_CF_NO_PAREN</strong> — <em>But cf.</em> always requires an explanatory parenthetical beginning with a present participle (R. 1.2, R. 1.5).</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>COMPARE_WITH_NO_PAREN</strong> — <em>Compare…with…</em> requires an explanatory parenthetical on each cited authority (R. 1.2, R. 1.5).</div>
       </div>
     </div>
 
@@ -610,9 +610,9 @@
         <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.pincites ? '▲' : '▼'"></span>
       </button>
       <div x-show="legendOpen.pincites" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>QUOTE_NO_PINCITE</strong> — direct quote detected without a pincite; Bluebook R. 3.2 requires one.</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_HYPHEN</strong> — page range uses a hyphen (<code>-</code>) instead of an en-dash (<code>–</code>) as required by Bluebook R. 3.2(a).</div>
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_UNSHORTENED</strong> — ending page not shortened per Bluebook R. 3.2(a). Example: <code>1124–1129</code> should be <code>1124–29</code>.</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>QUOTE_NO_PINCITE</strong> — direct quote without a pincite; R. 3.2(a) and R. 5.2 require a pincite for all quoted material.</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>PINCITE_HYPHEN</strong> — page range uses a hyphen (<code>-</code>) instead of the required en-dash (<code>–</code>) (R. 3.2(a)).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_UNSHORTENED</strong> — ending page not shortened per R. 3.2(a); e.g., <code>1124–1129</code> should be <code>1124–29</code>.</div>
       </div>
     </div>
 
@@ -623,7 +623,7 @@
         <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.format ? '▲' : '▼'"></span>
       </button>
       <div x-show="legendOpen.format" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>FOOTNOTE_NO_PERIOD</strong> — footnote does not end with a period.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>FOOTNOTE_NO_PERIOD</strong> — footnote does not end with a period (R. 1.1).</div>
       </div>
     </div>
 
@@ -634,7 +634,7 @@
         <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.urls ? '▲' : '▼'"></span>
       </button>
       <div x-show="legendOpen.urls" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>URL_NOT_ARCHIVED</strong> — Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). <a href="https://lawreview.tools/permadrop/" target="_blank" rel="noopener noreferrer" style="color:var(--indigo-400,#818cf8);">PermaDrop</a> can help you create one.</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>URL_NOT_ARCHIVED</strong> — internet citation without a permanent archive link; R. 18.2.1 requires an archived URL for all internet sources (e.g., <a href="https://lawreview.tools/permadrop/" target="_blank" rel="noopener noreferrer" style="color:var(--indigo-400,#818cf8);">PermaDrop</a>).</div>
       </div>
     </div>
 
@@ -645,7 +645,7 @@
         <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.hereinafter ? '▲' : '▼'"></span>
       </button>
       <div x-show="legendOpen.hereinafter" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote (R. 4.2(b)).</div>
       </div>
     </div>
 
@@ -984,13 +984,13 @@ function app() {
             problems.push({
               type: 'error',
               rule: 'SUPRA_NONEXISTENT',
-              msg:  `"${ref.fullMatch}" — footnote ${ref.refNum} does not exist in this document.`,
+              msg:  `"${ref.fullMatch}" — footnote ${ref.refNum} does not exist in this document (R. 4.2).`,
             });
           } else if (ref.refNum >= num) {
             problems.push({
               type: 'error',
               rule: 'SUPRA_FORWARD',
-              msg:  `"${ref.fullMatch}" — cannot reference note ${ref.refNum}, which comes at or after this footnote (${num}).`,
+              msg:  `"${ref.fullMatch}" — supra must refer to an earlier footnote; note ${ref.refNum} comes at or after this footnote (${num}) (R. 4.2).`,
             });
           } else {
             const target     = fnMap.get(ref.refNum);
@@ -1001,7 +1001,7 @@ function app() {
               problems.push({
                 type: 'error',
                 rule: 'SUPRA_TO_SHORT_CITE',
-                msg:  `"${ref.fullMatch}" — footnote ${ref.refNum} itself begins with ${targetIsId ? 'Id.' : 'supra note'}, not a full citation. A supra must refer to a full-citation footnote.`,
+                msg:  `"${ref.fullMatch}" — footnote ${ref.refNum} itself begins with ${targetIsId ? 'Id.' : 'supra note'}, not a full citation; supra must point to a full citation (R. 4.2).`,
               });
             } else {
               // ── Classify supra source type ───────────────────────────────
@@ -1060,21 +1060,21 @@ function app() {
 
                 if (isCase) {
                   problems.push({
-                    type: 'warning',
+                    type: 'error',
                     rule: 'SUPRA_WRONG_SOURCE_TYPE',
-                    msg:  `"${ref.fullMatch}" — Bluebook prohibits supra for cases; use a short-form case citation instead (R. 10.9, R. 4.2).`,
+                    msg:  `"${ref.fullMatch}" — supra is prohibited for cases; use a short-form case citation instead (R. 4.2(a), R. 10.9).`,
                   });
                 } else if (isStatuteOrRule) {
                   problems.push({
-                    type: 'warning',
+                    type: 'error',
                     rule: 'SUPRA_WRONG_SOURCE_TYPE',
-                    msg:  `"${ref.fullMatch}" — Bluebook prohibits supra for statutes and rules; use the short form instead (e.g., repeat the section/rule number) (R. 12.10, R. 4.2).`,
+                    msg:  `"${ref.fullMatch}" — supra is prohibited for statutes and rules; use the short form instead, e.g., repeat the section/rule number (R. 4.2(a), R. 12.10).`,
                   });
                 } else if (isConstitution) {
                   problems.push({
-                    type: 'warning',
+                    type: 'error',
                     rule: 'SUPRA_WRONG_SOURCE_TYPE',
-                    msg:  `"${ref.fullMatch}" — Bluebook prohibits supra for constitutions; cite directly (R. 11, R. 4.2).`,
+                    msg:  `"${ref.fullMatch}" — supra is prohibited for constitutions; cite directly (R. 4.2(a), R. 11).`,
                   });
                 } else {
                   const afterMatch = text.slice(ref.matchEnd);
@@ -1083,7 +1083,7 @@ function app() {
                     problems.push({
                       type: 'warning',
                       rule: 'SUPRA_NO_PINCITE',
-                      msg:  `"${ref.fullMatch}" — missing pincite; Bluebook requires "supra note N, at [page]".`,
+                      msg:  `"${ref.fullMatch}" — missing pincite; R. 4.2 requires "supra note N, at [page]" when referring to a specific page.`,
                     });
                   }
                 }
@@ -1098,13 +1098,13 @@ function app() {
             problems.push({
               type: 'error',
               rule: 'ID_NO_PRECEDING',
-              msg:  `"Id." — there is no preceding citation for Id. to reference.`,
+              msg:  `"Id." — there is no preceding citation to reference (R. 4.1).`,
             });
           } else if (prevAuth.isAmbiguous) {
             problems.push({
               type:       'warning',
               rule:       'ID_AMBIGUOUS',
-              msg:        `"Id." — the preceding footnote (${prevAuth.fnNum}) appears to cite multiple sources; Id. is ambiguous about which source it refers to.`,
+              msg:        `"Id." — the preceding footnote (${prevAuth.fnNum}) cites multiple sources; Id. is ambiguous about which authority it refers to (R. 4.1).`,
               prevFnNum:  prevAuth.fnNum,
               prevFnText: fnMap.get(prevAuth.fnNum)?.text || '',
             });
@@ -1117,7 +1117,7 @@ function app() {
           problems.push({
             type: 'warning',
             rule: 'ID_STALE',
-            msg:  `"Id." — the source was first cited ${num - prevAuth.fnNum} footnotes ago (fn ${prevAuth.fnNum}); consider a short-form citation instead (Bluebook R. 4.1).`,
+            msg:  `"Id." — the source was first cited ${num - prevAuth.fnNum} footnotes ago (fn ${prevAuth.fnNum}); consider a short-form citation instead (R. 4.1).`,
           });
         }
 
@@ -1129,7 +1129,7 @@ function app() {
           problems.push({
             type: 'warning',
             rule: 'FOOTNOTE_NO_PERIOD',
-            msg:  'Footnote does not end with a period.',
+            msg:  'Footnote does not end with a period (R. 1.1).',
           });
         }
 
@@ -1150,7 +1150,7 @@ function app() {
             problems.push({
               type: 'error',
               rule: 'URL_NOT_ARCHIVED',
-              msg:  `Bluebook R. 18.2 requires a permanent, archived URL (e.g., a Perma.cc link). <a href="https://lawreview.tools/permadrop/" target="_blank" rel="noopener noreferrer">PermaDrop</a> can help you create one.`,
+              msg:  `R. 18.2.1 requires a permanent archive link for all internet citations. <a href="https://lawreview.tools/permadrop/" target="_blank" rel="noopener noreferrer">PermaDrop</a> can help you create one.`,
             });
           }
         }
@@ -1159,9 +1159,9 @@ function app() {
         if (/\bcf\./i.test(text) && !/\bbut\s+cf\./i.test(text)) {
           if (!this._hasExplanatoryParen(text)) {
             problems.push({
-              type: 'warning',
+              type: 'error',
               rule: 'CF_NO_PAREN',
-              msg:  '"Cf." always requires an explanatory parenthetical (Bluebook R. 1.2).',
+              msg:  '"Cf." always requires an explanatory parenthetical beginning with a present participle (R. 1.2, R. 1.5).',
             });
           }
         }
@@ -1170,9 +1170,9 @@ function app() {
         if (/\bbut\s+cf\./i.test(text)) {
           if (!this._hasExplanatoryParen(text)) {
             problems.push({
-              type: 'warning',
+              type: 'error',
               rule: 'BUT_CF_NO_PAREN',
-              msg:  '"But cf." always requires an explanatory parenthetical (Bluebook R. 1.2).',
+              msg:  '"But cf." always requires an explanatory parenthetical beginning with a present participle (R. 1.2, R. 1.5).',
             });
           }
         }
@@ -1181,9 +1181,9 @@ function app() {
         if (/\bcompare\b.+?\bwith\b/i.test(text)) {
           if (this._countExplanatoryParens(text) < 2) {
             problems.push({
-              type: 'warning',
+              type: 'error',
               rule: 'COMPARE_WITH_NO_PAREN',
-              msg:  '"Compare...with..." — both sides require explanatory parentheticals (Bluebook R. 1.2).',
+              msg:  '"Compare...with..." — both sides require an explanatory parenthetical beginning with a present participle (R. 1.2, R. 1.5).',
             });
           }
         }
@@ -1198,7 +1198,7 @@ function app() {
               problems.push({
                 type: 'warning',
                 rule: 'HEREINAFTER_NEVER_USED',
-                msg:  `[hereinafter ${term}] is defined here but never used in any subsequent footnote.`,
+                msg:  `[hereinafter ${term}] is defined here but never referenced in any later footnote (R. 4.2(b)).`,
               });
             }
           }
@@ -1214,7 +1214,7 @@ function app() {
             problems.push({
               type: 'warning',
               rule: 'SEE_GEN_NO_PAREN',
-              msg:  '"See generally" — Bluebook strongly prefers an explanatory parenthetical beginning with a present participle, e.g., (arguing that...).',
+              msg:  '"See generally" — R. 1.2, R. 1.5 strongly prefer an explanatory parenthetical beginning with a present participle, e.g., (arguing that...).',
             });
           }
         }
@@ -1262,9 +1262,9 @@ function app() {
               /\([^)]*\d{4}[^)]*\)\s+\d+/.test(text);
             if (!hasPincite) {
               problems.push({
-                type: 'warning',
+                type: 'error',
                 rule: 'QUOTE_NO_PINCITE',
-                msg:  'Direct quote detected without an apparent pincite (Bluebook R. 3.2 requires a pincite for quoted material).',
+                msg:  'Direct quote without a pincite (R. 3.2(a), R. 5.2 require a pincite for all quoted material).',
               });
             }
           }
@@ -1292,9 +1292,9 @@ function app() {
 
             if (dash === '-') {
               problems.push({
-                type: 'warning',
+                type: 'error',
                 rule: 'PINCITE_HYPHEN',
-                msg:  `"${pm[0]}" — page spans must use an en-dash (–), not a hyphen (-). In Word: type start, two hyphens, end and Word auto-converts. Bluebook R. 3.2(a).`,
+                msg:  `"${pm[0]}" — page spans must use an en-dash (–), not a hyphen (-) (R. 3.2(a)). In Word: type start, two hyphens, end and Word auto-converts.`,
               });
             }
 
