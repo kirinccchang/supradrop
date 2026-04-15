@@ -1348,14 +1348,20 @@ function app() {
           if (isLikelyDirectQuote) {
             // Statutory/rule citations use section numbers or subdivisions as pincite — no page needed.
             const isStatutoryCitation =
-              /§\s*\d+/.test(text) ||                 // § 1927, § 1983(a)
-              /Fed\.\s*R\./.test(text) ||              // Fed. R. Civ. P., Fed. R. Evid.
-              /U\.S\.\s*Const\./.test(text) ||         // U.S. Const. art. I
-              /Rev\.\s*Stat\./.test(text) ||            // Rev. Stat.
-              /\br\.\s*\d/.test(text) ||               // Model Rules r. 1.6, Restatement r. 12
-              /\bRule[s]?\s+\d+/.test(text) ||          // Rules of Court Rule 10.430, Rule 12(b)(6)
-              /\bstd\.\s*\d+/i.test(text) ||            // Cal. Standards std. 10.80
-              /\bArt(?:icle)?\.\s+[IVX\d]/i.test(text); // Art. II, Article III (constitutional)
+              /§\s*\d+/.test(text) ||                          // § 1927, § 1983(a)
+              /¶\s*\d+/.test(text) ||                           // ¶ 5, ¶¶ 2–3 (Restatements, UN docs)
+              /Fed\.\s*R\./.test(text) ||                       // Fed. R. Civ. P., Fed. R. Evid.
+              /U\.S\.\s*Const\./.test(text) ||                  // U.S. Const. art. I
+              /\bConst\.\s+art\./i.test(text) ||                // Cal. Const. art. I, Tex. Const. art. II
+              /Rev\.\s*Stat\./.test(text) ||                    // Rev. Stat.
+              /\br\.\s*\d/.test(text) ||                        // Model Rules r. 1.6, Restatement r. 12
+              /\bRestatement\b/i.test(text) ||                  // Restatement (Second) of Contracts cmt. a
+              /\bRule[s]?\s+\d+/.test(text) ||                  // Rules of Court Rule 10.430, Rule 12(b)(6)
+              /\bstd\.\s*\d+/i.test(text) ||                    // Cal. Standards std. 10.80
+              /\bArt(?:icle)?\.?\s+[IVX\d]/i.test(text) ||     // Art. II, Article III, Article 14 (dot optional)
+              /\bart\.\s+[IVX\d]/i.test(text) ||                // art. 14 CISG, art. III treaty (lowercase)
+              /\bExec(?:utive)?\.\s+Order\b/i.test(text) ||     // Exec. Order No. 14,028
+              /\bProclamation\s+No\./i.test(text);              // Proclamation No. 9844
             const hasPincite =
               isStatutoryCitation ||
               // Pure web sources are unpaginated — Bluebook R. 3.2(a) exempts them from pincite.
@@ -1373,12 +1379,14 @@ function app() {
               // an explicit pincite, so we exclude them from this exemption.
               (!(/\bL\.\s*Rev\.|\bL\.J\.|\bJ\.\s*L\b|\bLaw\s+(?:Rev|J)\b/.test(text)) &&
                /\d+\s+[A-Z][A-Za-z0-9.]*\s+\d+\s*\([^)]*\d{4}[^)]*\)/.test(text)) ||
-              // Reporter citation with explicit comma-separated pincite: [vol] [Reporter] [start], [pincite]
-              /\d+\s+[A-Z][A-Za-z0-9.]*\s+\d+\s*,\s*\d+/.test(text) ||
-              // Pincite before court/year parenthetical — including en-dash ranges: , 278–279 (2017)
-              /,\s*\d+(?:[–\-]\d+)?(?:\s+n\.\d+(?:\.\d+)?)?\s*(?:\([^)]*\d{4}[^)]*\)|$)/.test(text) ||
+              // Reporter citation with explicit comma-separated pincite (single, range, or colon article number):
+              // e.g. "100 F.3d 200, 205" or "100 F.3d 200, 205–07" or "6 Digit. Gov. 6:1, 6:1"
+              /\d+\s+[A-Z][A-Za-z0-9.]*\s+\d+(?::\d+)?\s*,\s*\d+(?::\d+)?(?:[–\-]\d+)?/.test(text) ||
+              // Pincite before court/year parenthetical — including en-dash ranges and colon article numbers:
+              // e.g. ", 187 (S.D.N.Y. 2012)" or ", 278–279 (2017)" or ", 6:1 (2025)"
+              /,\s*\d+(?::\d+)?(?:[–\-]\d+)?(?:\s+n\.\d+(?:\.\d+)?)?\s*(?:\([^)]*\d{4}[^)]*\)|$)/.test(text) ||
               // Pincite AFTER court/year parenthetical: (E.D. Cal. 2025) 1067
-              /\([^)]*\d{4}[^)]*\)\s+\d+/.test(text) ||
+              /\([^)]*\d{4}[^)]*\)\s+\d+(?:[–\-]\d+)?/.test(text) ||
               // Book/institutional source: pincite is number directly before a date-stamped parenthetical
               // e.g. "Interim Policy 5 (Oct. 10, 2025)". Month name distinguishes date parens from year-only parens.
               /\d+\s*\([^)]*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d/.test(text);
