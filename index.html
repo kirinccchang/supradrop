@@ -1082,8 +1082,16 @@ function app() {
               // Fall back to targetSub (the matching sub-citation in the target
               // note) so author-label supra ("Hendrix, supra note 3") also works.
               const beforeSupra = text.slice(0, ref.matchStart);
-              const lastSemi = beforeSupra.lastIndexOf(';');
-              const rawShort = beforeSupra.slice(lastSemi + 1).trim().replace(/,\s*$/, '');
+              // Find the last strong clause boundary before "supra":
+              // semicolons are preferred, but also accept ". Capital" or ": Capital"
+              // (handles cases like "...LLMs"). This move...: McAdams and Engel, supra note 9"
+              // where there is no semicolon separating the narrative from the citation label).
+              const semiIdx = beforeSupra.lastIndexOf(';');
+              const boundaryRe = /[.:]\s+[A-Z]/g;
+              let boundaryIdx = -1, bBm;
+              while ((bBm = boundaryRe.exec(beforeSupra)) !== null) boundaryIdx = bBm.index;
+              const lastSep = Math.max(semiIdx, boundaryIdx);
+              const rawShort = beforeSupra.slice(lastSep + 1).trim().replace(/,\s*$/, '');
               const searchKey = rawShort.split(/[\s,]+/)[0]; // first word
               let targetSub = target.text;
               if (searchKey && searchKey.length > 2) {
@@ -1128,7 +1136,13 @@ function app() {
                 const isConstitution   = CONST_RE.test(rawShort) || CONST_RE.test(targetSub);
                 // Only classify as case when the targetSub (not rawShort) has "v."
                 // and the source isn't already identified as a statute/constitution.
-                const isCase = !isStatuteOrRule && !isConstitution && /\bv\.\s/.test(targetSub);
+                // Strip parentheticals first — explanatory parens like "(feeding Dobbs v. Jackson
+                // to ChatGPT)" can contain "v." for cases *discussed in* the article, not the
+                // citation itself being a case. Two passes handle one level of nesting.
+                const targetSubNoParens = targetSub
+                  .replace(/\([^()]*\)/g, '')
+                  .replace(/\([^()]*\)/g, '');
+                const isCase = !isStatuteOrRule && !isConstitution && /\bv\.\s/.test(targetSubNoParens);
 
                 if (isCase) {
                   problems.push({
