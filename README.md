@@ -16,13 +16,13 @@ SupraDrop does it for you. Upload your Word document and get a complete list of 
 
 ## What it does
 
-SupraDrop reads your `.docx` file directly in your browser, scans every footnote, and flags violations of **19 Bluebook citation rules** across six categories: *supra* usage, *Id.* usage, signal parentheticals, pincites, URL archiving, and *hereinafter* consistency.
+SupraDrop reads your `.docx` file directly in your browser, scans every footnote, and flags violations of **24 Bluebook citation rules** across six categories: *supra* usage, *Id.* usage, signal parentheticals, pincites, URL archiving, and *hereinafter* consistency.
 
 Every finding is marked as either an **error** (a mandatory Bluebook requirement your document violates) or a **warning** (a strong Bluebook recommendation worth reviewing). You can then download an annotated copy of your document with Word comments inserted at each problem footnote.
 
 No installation. No account. No upload. Your document never leaves your browser.
 
-## The 19 rules it checks
+## The 24 rules it checks
 
 ### Supra
 
@@ -51,6 +51,9 @@ No installation. No account. No upload. Your document never leaves your browser.
 | `BUT_CF_NO_PAREN` | 🔴 Error | *But cf.* without an explanatory parenthetical (R. 1.2, R. 1.5) |
 | `COMPARE_WITH_NO_PAREN` | 🔴 Error | *Compare … with …* without a parenthetical on each cited authority (R. 1.2, R. 1.5) |
 | `SEE_GEN_NO_PAREN` | 🟡 Warning | *See generally* without an explanatory parenthetical — Bluebook strongly prefers one (R. 1.2, R. 1.5) |
+| `EG_FORMAT` | 🟡 Warning | *See e.g.,* missing the required comma after "See" — write *See, e.g.,* not *See e.g.,* (R. 1.1) |
+| `SEE_ALSO_NO_PAREN` | 🟡 Warning | *See also* without an explanatory parenthetical — Bluebook strongly prefers one (R. 1.2, R. 1.5) |
+| `BUT_SEE_NO_PAREN` | 🟡 Warning | *But see* without an explanatory parenthetical — Bluebook strongly prefers one (R. 1.2, R. 1.5) |
 
 ### Pincites
 
@@ -59,6 +62,7 @@ No installation. No account. No upload. Your document never leaves your browser.
 | `QUOTE_NO_PINCITE` | 🔴 Error | Direct quotation without a pincite (R. 3.2(a), R. 5.2) |
 | `PINCITE_HYPHEN` | 🔴 Error | Page range uses a hyphen (`-`) instead of the required en-dash (`–`) (R. 3.2(a)) |
 | `PINCITE_UNSHORTENED` | 🟡 Warning | Ending page not shortened: `1124–1129` should be `1124–29` (R. 3.2(a)) |
+| `PINCITE_PP` | 🟡 Warning | `pp.` before a page number — the Bluebook never uses `pp.` for pincites; write the page number directly (R. 3.2) |
 
 ### Format
 
@@ -77,6 +81,7 @@ No installation. No account. No upload. Your document never leaves your browser.
 | Rule | Severity | What it catches |
 |------|----------|-----------------|
 | `HEREINAFTER_NEVER_USED` | 🟡 Warning | `[hereinafter X]` is defined but never referenced in any later footnote (R. 4.2(b)) |
+| `HEREINAFTER_FORMAT` | 🔴 Error | *hereinafter* appears outside square brackets — write `[hereinafter X]`, not `(hereinafter X)` or bare text (R. 4.2(b)) |
 
 ## Features
 
@@ -104,7 +109,7 @@ No installation. No account. No upload. Your document never leaves your browser.
 
 ## Try it with the sample document
 
-This repository includes [`SupraDrop_TestFixture.docx`](SupraDrop_TestFixture.docx), a sample Word document with intentional citation errors seeded across all 19 rules. Upload it at [lawreview.tools/supradrop](https://lawreview.tools/supradrop/) to see every check in action.
+This repository includes [`SupraDrop_TestFixture.docx`](SupraDrop_TestFixture.docx), a sample Word document with intentional citation errors seeded across all 24 rules. Upload it at [lawreview.tools/supradrop](https://lawreview.tools/supradrop/) to see every check in action.
 
 ## Requirements
 

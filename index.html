@@ -25,7 +25,7 @@
 
   <!-- Primary SEO -->
   <title>SupraDrop — Bluebook Citation Auditor for Law Review</title>
-  <meta name="description" content="Audit supra, Id., signal parentheticals, and pincites in Word footnotes. Checks 19 Bluebook citation rules. Export annotated .docx, CSV, or TXT. 100% private — nothing uploaded.">
+  <meta name="description" content="Audit supra, Id., signal parentheticals, and pincites in Word footnotes. Checks 24 Bluebook citation rules. Export annotated .docx, CSV, or TXT. 100% private — nothing uploaded.">
   <meta name="author" content="Kirin Chang">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://supradrop.kirinchang.com/">
@@ -36,7 +36,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="lawreview.tools">
   <meta property="og:title" content="SupraDrop — Bluebook Citation Auditor for Law Review">
-  <meta property="og:description" content="Audit supra, Id., signal parentheticals, and pincites in Word footnotes. Checks 19 Bluebook citation rules. Export annotated .docx, CSV, or TXT. 100% private.">
+  <meta property="og:description" content="Audit supra, Id., signal parentheticals, and pincites in Word footnotes. Checks 24 Bluebook citation rules. Export annotated .docx, CSV, or TXT. 100% private.">
   <meta property="og:url" content="https://supradrop.kirinchang.com/">
   <meta property="og:image" content="https://lawreview.tools/og-supradrop.png">
   <meta property="og:image:width" content="1200">
@@ -49,7 +49,7 @@
   <meta name="twitter:site" content="@chengchi_chang">
   <meta name="twitter:creator" content="@chengchi_chang">
   <meta name="twitter:title" content="SupraDrop — Bluebook Citation Auditor for Law Review">
-  <meta name="twitter:description" content="Audit supra, Id., signals, and pincites across all footnotes. Checks 19 Bluebook rules. 100% private — runs in your browser.">
+  <meta name="twitter:description" content="Audit supra, Id., signals, and pincites across all footnotes. Checks 24 Bluebook rules. 100% private — runs in your browser.">
   <meta name="twitter:image" content="https://lawreview.tools/og-supradrop.png">
 
   <!-- JSON-LD -->
@@ -59,13 +59,13 @@
     "@type": "SoftwareApplication",
     "name": "SupraDrop",
     "url": "https://lawreview.tools/supradrop/",
-    "description": "Audit supra, Id., signal parentheticals, and pincites across all Word document footnotes. Checks 19 Bluebook citation rules. Free, private, runs entirely in-browser.",
+    "description": "Audit supra, Id., signal parentheticals, and pincites across all Word document footnotes. Checks 24 Bluebook citation rules. Free, private, runs entirely in-browser.",
     "applicationCategory": "LegalApplication",
     "applicationSubCategory": "Citation Management",
     "operatingSystem": "Windows, macOS, Linux",
     "browserRequirements": "Requires a modern web browser with JavaScript enabled",
     "featureList": [
-      "Checks 19 Bluebook citation rules",
+      "Checks 24 Bluebook citation rules",
       "Audits supra, Id., hereinafter, signal parentheticals, pincites",
       "Detects SUPRA_MISMATCH, SUPRA_FORWARD, CF_NO_PAREN, and more",
       "Export annotated .docx with Word comments",
@@ -301,7 +301,7 @@
       </button>
     </div>
     <p class="subtitle">
-      Your footnotes have errors your editor will catch. SupraDrop finds them first: drop in your Word document and get a full audit of <em>supra</em> chains, <em>Id.</em> usage, signal parentheticals, pincites, and hereinafter — all 19 Bluebook rules, in seconds.
+      Your footnotes have errors your editor will catch. SupraDrop finds them first: drop in your Word document and get a full audit of <em>supra</em> chains, <em>Id.</em> usage, signal parentheticals, pincites, and hereinafter — all 24 Bluebook rules, in seconds.
     </p>
     <p class="trust-signals">
       <span>Free &amp; open source</span><span class="tsep">·</span><span>100% in-browser</span><span class="tsep">·</span><span>Nothing sent to any server</span>
@@ -310,6 +310,11 @@
       <a href="https://github.com/kirinccchang/supradrop" target="_blank" rel="noopener noreferrer"
          style="color:var(--text-muted); text-decoration:underline; text-underline-offset:2px;">
         GitHub — source &amp; documentation (AGPL-3.0) →
+      </a>
+      <span style="color:var(--text-faint); margin:0 6px;">·</span>
+      <a href="https://github.com/kirinccchang/supradrop/raw/refs/heads/main/SupraDrop_TestFixture.docx"
+         style="color:var(--text-muted); text-decoration:underline; text-underline-offset:2px;">
+        SupraDrop_TestFixture.docx — sample document to try →
       </a>
     </p>
   </div>
@@ -635,6 +640,9 @@
         <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>BUT_CF_NO_PAREN</strong> — <em>But cf.</em> always requires an explanatory parenthetical beginning with a present participle (R. 1.2, R. 1.5).</div>
         <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>COMPARE_WITH_NO_PAREN</strong> — <em>Compare…with…</em> requires an explanatory parenthetical on each cited authority (R. 1.2, R. 1.5).</div>
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SEE_GEN_NO_PAREN</strong> — <em>See generally</em> without an explanatory parenthetical; R. 1.2, R. 1.5 strongly prefer one beginning with a present participle.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>EG_FORMAT</strong> — <em>See e.g.,</em> missing the required comma after "See": write <em>See, e.g.,</em> not <em>See e.g.,</em> (R. 1.1).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>SEE_ALSO_NO_PAREN</strong> — <em>See also</em> without an explanatory parenthetical; R. 1.2, R. 1.5 strongly prefer one beginning with a present participle, e.g., <em>(noting that...)</em>.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>BUT_SEE_NO_PAREN</strong> — <em>But see</em> without an explanatory parenthetical; R. 1.2, R. 1.5 strongly prefer one beginning with a present participle, e.g., <em>(rejecting...)</em>.</div>
       </div>
     </div>
 
@@ -648,6 +656,7 @@
         <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>QUOTE_NO_PINCITE</strong> — direct quote without a pincite; R. 3.2(a) and R. 5.2 require a pincite for all quoted material.</div>
         <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>PINCITE_HYPHEN</strong> — page range uses a hyphen (<code>-</code>) instead of the required en-dash (<code>–</code>) (R. 3.2(a)).</div>
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_UNSHORTENED</strong> — ending page not shortened per R. 3.2(a); e.g., <code>1124–1129</code> should be <code>1124–29</code>.</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>PINCITE_PP</strong> — <code>pp.</code> before a page number is not used in Bluebook citations; write the page number directly without a <code>pp.</code> prefix (R. 3.2).</div>
       </div>
     </div>
 
@@ -681,6 +690,7 @@
       </button>
       <div x-show="legendOpen.hereinafter" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
         <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote (R. 4.2(b)).</div>
+        <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>HEREINAFTER_FORMAT</strong> — <em>hereinafter</em> must appear inside square brackets: <em>[hereinafter X]</em>, not <em>(hereinafter X)</em> or bare text (R. 4.2(b)).</div>
       </div>
     </div>
 
@@ -722,15 +732,15 @@ function app() {
       { id: 'id',          label: 'Id.',          enabled: true,
         rules: ['ID_NO_PRECEDING','ID_AMBIGUOUS','ID_STALE'] },
       { id: 'signals',     label: 'Signals',      enabled: true,
-        rules: ['CF_NO_PAREN','BUT_CF_NO_PAREN','COMPARE_WITH_NO_PAREN','SEE_GEN_NO_PAREN'] },
+        rules: ['CF_NO_PAREN','BUT_CF_NO_PAREN','COMPARE_WITH_NO_PAREN','SEE_GEN_NO_PAREN','EG_FORMAT','SEE_ALSO_NO_PAREN','BUT_SEE_NO_PAREN'] },
       { id: 'pincites',    label: 'Quotes & Pincites', enabled: true,
-        rules: ['QUOTE_NO_PINCITE', 'PINCITE_HYPHEN', 'PINCITE_UNSHORTENED'] },
+        rules: ['QUOTE_NO_PINCITE', 'PINCITE_HYPHEN', 'PINCITE_UNSHORTENED', 'PINCITE_PP'] },
       { id: 'format',      label: 'Format',       enabled: true,
         rules: ['FOOTNOTE_NO_PERIOD'] },
       { id: 'urls',        label: 'URLs',         enabled: true,
         rules: ['URL_NOT_ARCHIVED'] },
       { id: 'hereinafter', label: 'Hereinafter',  enabled: true,
-        rules: ['HEREINAFTER_NEVER_USED'] },
+        rules: ['HEREINAFTER_NEVER_USED', 'HEREINAFTER_FORMAT'] },
     ],
 
     // Legend accordion state
@@ -1257,6 +1267,16 @@ function app() {
           }
         }
 
+        // ── hereinafter outside square brackets ──────────────────────────
+        // Correct: [hereinafter X] — Common error: (hereinafter X) or bare text
+        if (/\bhereinafter\b/i.test(text) && !/\[hereinafter\b/i.test(text)) {
+          problems.push({
+            type: 'error',
+            rule: 'HEREINAFTER_FORMAT',
+            msg:  '"hereinafter" must appear inside square brackets — write [hereinafter X], not (hereinafter X) or bare text (R. 4.2(b)).',
+          });
+        }
+
         // ── "See generally" without explanatory parenthetical ────────────
         // Bluebook "strongly prefers" (not "requires") a parenthetical here.
         // Accept any substantive parenthetical (30+ chars), not just -ing ones:
@@ -1268,6 +1288,38 @@ function app() {
               type: 'warning',
               rule: 'SEE_GEN_NO_PAREN',
               msg:  '"See generally" — R. 1.2, R. 1.5 strongly prefer an explanatory parenthetical beginning with a present participle, e.g., (arguing that...).',
+            });
+          }
+        }
+
+        // ── "See e.g." missing comma ─────────────────────────────────────
+        // Correct: "See, e.g.," — wrong: "See e.g.,"
+        if (/\bsee\s+e\.g\./i.test(text)) {
+          problems.push({
+            type: 'warning',
+            rule: 'EG_FORMAT',
+            msg:  '"See e.g." — a comma is required after "See" when introducing an example: write "See, e.g.," not "See e.g.," (R. 1.1).',
+          });
+        }
+
+        // ── See also without explanatory parenthetical ────────────────────
+        if (/\bsee\s+also\b/i.test(text)) {
+          if (!this._hasExplanatoryParen(text) && !this._hasAnySubstantiveParen(text)) {
+            problems.push({
+              type: 'warning',
+              rule: 'SEE_ALSO_NO_PAREN',
+              msg:  '"See also" — R. 1.2, R. 1.5 strongly prefer an explanatory parenthetical beginning with a present participle, e.g., (noting that...).',
+            });
+          }
+        }
+
+        // ── But see without explanatory parenthetical ────────────────────
+        if (/\bbut\s+see\b/i.test(text)) {
+          if (!this._hasExplanatoryParen(text) && !this._hasAnySubstantiveParen(text)) {
+            problems.push({
+              type: 'warning',
+              rule: 'BUT_SEE_NO_PAREN',
+              msg:  '"But see" — R. 1.2, R. 1.5 strongly prefer an explanatory parenthetical beginning with a present participle, e.g., (rejecting the argument that...).',
             });
           }
         }
@@ -1321,6 +1373,16 @@ function app() {
               });
             }
           }
+        }
+
+        // ── "pp." before page number ─────────────────────────────────────
+        // Bluebook never uses "pp." for pincites — just the bare page number.
+        if (/\bpp\.\s*\d+/.test(text)) {
+          problems.push({
+            type: 'warning',
+            rule: 'PINCITE_PP',
+            msg:  '"pp." before a page number — the Bluebook does not use "pp." for pincites; write the page number directly without a "pp." prefix (R. 3.2).',
+          });
         }
 
         // ── Pincite page range format (Bluebook R. 3.2(a)) ──────────────────
