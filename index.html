@@ -1387,8 +1387,14 @@ function app() {
             const hasPincite =
               isStatutoryCitation ||
               // Id. citations inherit the pincite from the preceding citation (same source, same page).
-              // "See id." or bare "Id." with a quote does not need a new pincite — the page is inherited.
-              /^\s*(?:See\s+)?[Ii]d\./.test(text) ||
+              // Only exempt when the preceding footnote itself had a pincite — otherwise there's no page to inherit.
+              // If the Id. has an explicit "at N" that's caught by the /\bat\s+.../ line below instead.
+              (/^\s*(?:See\s+)?[Ii]d\./.test(text) && !/\bat\s+[\d*§¶]/.test(text) && (() => {
+                const prevFn = fnMap.get(num - 1);
+                if (!prevFn) return false;
+                const pt = prevFn.text;
+                return /,\s*\d+(?::\d+)?(?:[–\-]\d+)?/.test(pt) || /\bat\s+(?:¶+\s*)?\*?\d+/.test(pt);
+              })()) ||
               // Pure web sources are unpaginated — Bluebook R. 3.2(a) exempts them from pincite.
               // "Pure" means: has a URL, no volume+reporter+page pattern, not a .pdf,
               // AND not a known academic repository that hosts paginated PDFs.
@@ -1415,6 +1421,11 @@ function app() {
               /,\s*\d+(?::\d+)?(?:[–\-]\d+)?(?:\s+n\.\d+(?:\.\d+)?)?\s*(?:\([^)]*\d{4}[^)]*\)|$)/.test(text) ||
               // Pincite AFTER court/year parenthetical: (E.D. Cal. 2025) 1067
               /\([^)]*\d{4}[^)]*\)\s+\d+(?:[–\-]\d+)?/.test(text) ||
+              // Subdivision/provision pincite: (a)(1), (b)(2), (c)(2), (c)(5), etc.
+              // Court standing orders, agency rules, and institutional policies are cited by provision
+              // reference rather than page number. The subdivision IS the pincite.
+              // e.g. "S.C. Sup. Ct., Interim Policy ... (c)(2)(Appellate Case No. ...) (Mar. 25, 2025)"
+              /\([a-z]\)\(\d+\)/.test(text) ||
               // Book/institutional source: pincite is number directly before a date-stamped parenthetical
               // e.g. "Interim Policy 5 (Oct. 10, 2025)". Month name distinguishes date parens from year-only parens.
               /\d+\s*\([^)]*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d/.test(text) ||
