@@ -1352,7 +1352,10 @@ function app() {
               /Fed\.\s*R\./.test(text) ||              // Fed. R. Civ. P., Fed. R. Evid.
               /U\.S\.\s*Const\./.test(text) ||         // U.S. Const. art. I
               /Rev\.\s*Stat\./.test(text) ||            // Rev. Stat.
-              /\br\.\s*\d/.test(text);                 // Model Rules r. 1.6, Restatement r. 12
+              /\br\.\s*\d/.test(text) ||               // Model Rules r. 1.6, Restatement r. 12
+              /\bRule[s]?\s+\d+/.test(text) ||          // Rules of Court Rule 10.430, Rule 12(b)(6)
+              /\bstd\.\s*\d+/i.test(text) ||            // Cal. Standards std. 10.80
+              /\bArt(?:icle)?\.\s+[IVX\d]/i.test(text); // Art. II, Article III (constitutional)
             const hasPincite =
               isStatutoryCitation ||
               // Pure web sources are unpaginated — Bluebook R. 3.2(a) exempts them from pincite.
@@ -1372,10 +1375,13 @@ function app() {
                /\d+\s+[A-Z][A-Za-z0-9.]*\s+\d+\s*\([^)]*\d{4}[^)]*\)/.test(text)) ||
               // Reporter citation with explicit comma-separated pincite: [vol] [Reporter] [start], [pincite]
               /\d+\s+[A-Z][A-Za-z0-9.]*\s+\d+\s*,\s*\d+/.test(text) ||
-              // Pincite before court/year parenthetical: , 187 (S.D.N.Y. 2012)
-              /,\s*\d{1,4}(?:\s+n\.\d+(?:\.\d+)?)?\s*(?:\([^)]*\d{4}[^)]*\)|$)/.test(text) ||
+              // Pincite before court/year parenthetical — including en-dash ranges: , 278–279 (2017)
+              /,\s*\d+(?:[–\-]\d+)?(?:\s+n\.\d+(?:\.\d+)?)?\s*(?:\([^)]*\d{4}[^)]*\)|$)/.test(text) ||
               // Pincite AFTER court/year parenthetical: (E.D. Cal. 2025) 1067
-              /\([^)]*\d{4}[^)]*\)\s+\d+/.test(text);
+              /\([^)]*\d{4}[^)]*\)\s+\d+/.test(text) ||
+              // Book/institutional source: pincite is number directly before a date-stamped parenthetical
+              // e.g. "Interim Policy 5 (Oct. 10, 2025)". Month name distinguishes date parens from year-only parens.
+              /\d+\s*\([^)]*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d/.test(text);
             if (!hasPincite) {
               problems.push({
                 type: 'error',
