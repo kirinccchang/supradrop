@@ -1069,7 +1069,44 @@ function app() {
             const targetTrim = target.text.replace(/^\s*(?:See(?: also)?|But see|Accord|E\.g\.,?)\s+/i, '');
             const targetIsId    = /^Id\./i.test(targetTrim);
             const targetIsSupra = /^supra\s+note/i.test(targetTrim);
-            if (targetIsId || targetIsSupra) {
+
+            // ── Compute author label early (needed for SUPRA_TO_SHORT_CITE) ──
+            // Prefer checking rawShort (text before "supra" in the current
+            // footnote) because it names exactly what is being cited.
+            // Fall back to targetSub (the matching sub-citation in the target
+            // note) so author-label supra ("Hendrix, supra note 3") also works.
+            const beforeSupra = text.slice(0, ref.matchStart);
+            // Find the last strong clause boundary before "supra":
+            // semicolons are preferred, but also accept ". Capital" or ": Capital"
+            // (handles cases like "...LLMs"). This move...: McAdams and Engel, supra note 9"
+            // where there is no semicolon separating the narrative from the citation label).
+            const semiIdx = beforeSupra.lastIndexOf(';');
+            const boundaryRe = /[.:]\s+[A-Z]/g;
+            let boundaryIdx = -1, bBm;
+            while ((bBm = boundaryRe.exec(beforeSupra)) !== null) boundaryIdx = bBm.index;
+            const lastSep = Math.max(semiIdx, boundaryIdx);
+            const rawShort = beforeSupra.slice(lastSep + 1).trim().replace(/,\s*$/, '');
+            const searchKey = rawShort.split(/[\s,]+/)[0]; // first word
+            let targetSub = target.text;
+            if (searchKey && searchKey.length > 2) {
+              const subCites = target.text.split(/\s*;\s*/);
+              const match = subCites.find(s => s.includes(searchKey));
+              if (match) targetSub = match;
+            }
+
+            // Strip citation signals to get the bare author/title label
+            const cleanLabel = rawShort
+              .replace(/^\s*(?:See(?: also| generally)?|But see|Accord|E\.g\.,?|Cf\.|But cf\.)\s*/i, '')
+              .trim();
+            // First word of 4+ chars is the key we look for in the target footnote
+            const labelKey = cleanLabel.split(/[\s,]+/).find(w => w.length >= 4) || '';
+
+            // A footnote that starts with Id./supra for one source may still contain
+            // a full citation to a *different* source later in the same footnote.
+            // Only flag SUPRA_TO_SHORT_CITE when the author label is NOT present —
+            // meaning the footnote truly has no full citation for the referenced source.
+            const labelFoundInTarget = labelKey && target.text.toLowerCase().includes(labelKey.toLowerCase());
+            if ((targetIsId || targetIsSupra) && !labelFoundInTarget) {
               problems.push({
                 type: 'error',
                 rule: 'SUPRA_TO_SHORT_CITE',
@@ -1077,35 +1114,6 @@ function app() {
               });
             } else {
               // ── Classify supra source type ───────────────────────────────
-              // Prefer checking rawShort (text before "supra" in the current
-              // footnote) because it names exactly what is being cited.
-              // Fall back to targetSub (the matching sub-citation in the target
-              // note) so author-label supra ("Hendrix, supra note 3") also works.
-              const beforeSupra = text.slice(0, ref.matchStart);
-              // Find the last strong clause boundary before "supra":
-              // semicolons are preferred, but also accept ". Capital" or ": Capital"
-              // (handles cases like "...LLMs"). This move...: McAdams and Engel, supra note 9"
-              // where there is no semicolon separating the narrative from the citation label).
-              const semiIdx = beforeSupra.lastIndexOf(';');
-              const boundaryRe = /[.:]\s+[A-Z]/g;
-              let boundaryIdx = -1, bBm;
-              while ((bBm = boundaryRe.exec(beforeSupra)) !== null) boundaryIdx = bBm.index;
-              const lastSep = Math.max(semiIdx, boundaryIdx);
-              const rawShort = beforeSupra.slice(lastSep + 1).trim().replace(/,\s*$/, '');
-              const searchKey = rawShort.split(/[\s,]+/)[0]; // first word
-              let targetSub = target.text;
-              if (searchKey && searchKey.length > 2) {
-                const subCites = target.text.split(/\s*;\s*/);
-                const match = subCites.find(s => s.includes(searchKey));
-                if (match) targetSub = match;
-              }
-
-              // Strip citation signals to get the bare author/title label
-              const cleanLabel = rawShort
-                .replace(/^\s*(?:See(?: also| generally)?|But see|Accord|E\.g\.,?|Cf\.|But cf\.)\s*/i, '')
-                .trim();
-              // First word of 4+ chars is the key we look for in the target footnote
-              const labelKey = cleanLabel.split(/[\s,]+/).find(w => w.length >= 4) || '';
 
               if (labelKey && !target.text.toLowerCase().includes(labelKey.toLowerCase())) {
                 // Search prior footnotes for the correct target
