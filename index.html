@@ -689,8 +689,8 @@
         <span style="font-size:11px; color:var(--text-faint);" x-text="legendOpen.hereinafter ? '▲' : '▼'"></span>
       </button>
       <div x-show="legendOpen.hereinafter" x-transition style="padding:4px 13px 12px; display:grid; gap:7px; font-size:12px; color:var(--text-2); line-height:1.6; border-top:1px solid var(--border);">
-        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote (R. 4.2(b)).</div>
         <div><span class="badge badge-error" style="margin-right:6px;">error</span> <strong>HEREINAFTER_FORMAT</strong> — <em>hereinafter</em> must appear inside square brackets: <em>[hereinafter X]</em>, not <em>(hereinafter X)</em> or bare text (R. 4.2(b)).</div>
+        <div><span class="badge badge-warning" style="margin-right:6px;">warn</span> <strong>HEREINAFTER_NEVER_USED</strong> — <em>[hereinafter X]</em> is defined but never referenced in any later footnote (R. 4.2(b)).</div>
       </div>
     </div>
 
@@ -740,7 +740,7 @@ function app() {
       { id: 'urls',        label: 'URLs',         enabled: true,
         rules: ['URL_NOT_ARCHIVED'] },
       { id: 'hereinafter', label: 'Hereinafter',  enabled: true,
-        rules: ['HEREINAFTER_NEVER_USED', 'HEREINAFTER_FORMAT'] },
+        rules: ['HEREINAFTER_FORMAT', 'HEREINAFTER_NEVER_USED'] },
     ],
 
     // Legend accordion state
@@ -1268,8 +1268,10 @@ function app() {
         }
 
         // ── hereinafter outside square brackets ──────────────────────────
-        // Correct: [hereinafter X] — Common error: (hereinafter X) or bare text
-        if (/\bhereinafter\b/i.test(text) && !/\[hereinafter\b/i.test(text)) {
+        // Correct: [hereinafter X] — Common errors: (hereinafter X) or bare "hereinafter Name"
+        // Only flag when hereinafter is used as a citation designator, not as an ordinary English word.
+        // Heuristic: flag (hereinafter ...) or bare hereinafter followed by a capitalized abbreviation.
+        if (/\(hereinafter\b/i.test(text) || (/\bhereinafter\s+[A-Z]/.test(text) && !/\[hereinafter\b/i.test(text))) {
           problems.push({
             type: 'error',
             rule: 'HEREINAFTER_FORMAT',
