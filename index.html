@@ -410,6 +410,15 @@
               <span style="font-size:12px; font-weight:500;" :style="g.enabled ? 'color:var(--text)' : 'color:var(--text-faint)'" x-text="g.label"></span>
             </label>
           </template>
+          <span style="display:inline-flex; gap:4px; margin-left:2px;">
+            <button @click="fo.ruleGroups.forEach(g => g.enabled = true)"
+                    style="font-size:11px; color:var(--text-faint); background:none; border:none; cursor:pointer; padding:0; line-height:1;"
+                    title="Select all">all</button>
+            <span style="color:var(--border); font-size:11px; line-height:1; align-self:center;">/</span>
+            <button @click="fo.ruleGroups.forEach(g => g.enabled = false)"
+                    style="font-size:11px; color:var(--text-faint); background:none; border:none; cursor:pointer; padding:0; line-height:1;"
+                    title="Deselect all">none</button>
+          </span>
         </div>
 
         <!-- Stats grid -->
