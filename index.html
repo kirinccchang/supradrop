@@ -1390,11 +1390,14 @@ function app() {
               // "See id." or bare "Id." with a quote does not need a new pincite — the page is inherited.
               /^\s*(?:See\s+)?[Ii]d\./.test(text) ||
               // Pure web sources are unpaginated — Bluebook R. 3.2(a) exempts them from pincite.
-              // "Pure" means: has a URL, no volume+reporter+page pattern, and is not a .pdf
-              // (a .pdf URL is definitively paginated and still requires a pincite).
+              // "Pure" means: has a URL, no volume+reporter+page pattern, not a .pdf,
+              // AND not a known academic repository that hosts paginated PDFs.
+              // arXiv, SSRN, OSF, bioRxiv etc. have page numbers even though their abstract
+              // URLs don't end in .pdf — a pincite is still required for those sources.
               (/https?:\/\//.test(text) &&
                !/\d+\s+[A-Z][A-Za-z.]*\s+\d+/.test(text) &&
-               !/\.pdf(?:[?#]|$)/i.test(text)) ||
+               !/\.pdf(?:[?#]|$)/i.test(text) &&
+               !/\b(?:arxiv\.org|ssrn\.com|papers\.ssrn\.com|osf\.io|biorxiv\.org|medrxiv\.org|philarchive\.org|edarxiv\.org|psyarxiv\.com|engrxiv\.org)\b/i.test(text)) ||
               // "at N" or "at ¶¶ N" — covers paragraph pincites in orders/slip opinions
               /\bat\s+(?:¶+\s*)?\*?\d+/.test(text) ||
               // Complete non-law-journal citation: vol Reporter startpage (year).
