@@ -80,8 +80,8 @@ No installation. No account. No upload. Your document never leaves your browser.
 
 | Rule | Severity | What it catches |
 |------|----------|-----------------|
-| `HEREINAFTER_NEVER_USED` | 🟡 Warning | `[hereinafter X]` is defined but never referenced in any later footnote (R. 4.2(b)) |
 | `HEREINAFTER_FORMAT` | 🔴 Error | *hereinafter* appears outside square brackets — write `[hereinafter X]`, not `(hereinafter X)` or bare text (R. 4.2(b)) |
+| `HEREINAFTER_NEVER_USED` | 🟡 Warning | `[hereinafter X]` is defined but never referenced in any later footnote (R. 4.2(b)) |
 
 ## Features
 
