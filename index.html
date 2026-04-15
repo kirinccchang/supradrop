@@ -1386,6 +1386,9 @@ function app() {
               /\bProclamation\s+No\./i.test(text);              // Proclamation No. 9844
             const hasPincite =
               isStatutoryCitation ||
+              // Id. citations inherit the pincite from the preceding citation (same source, same page).
+              // "See id." or bare "Id." with a quote does not need a new pincite — the page is inherited.
+              /^\s*(?:See\s+)?[Ii]d\./.test(text) ||
               // Pure web sources are unpaginated — Bluebook R. 3.2(a) exempts them from pincite.
               // "Pure" means: has a URL, no volume+reporter+page pattern, and is not a .pdf
               // (a .pdf URL is definitively paginated and still requires a pincite).
