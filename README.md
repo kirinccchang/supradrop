@@ -140,4 +140,4 @@ Research Fellow, U.S.-Asia Law Institute, NYU School of Law
 Licensed under the [GNU Affero General Public License v3.0](LICENSE).  
 If you modify this tool and run it as a network service, you must release your modified source code under the same license.
 
-Not affiliated with or endorsed by The Bluebook or Zotero.
+Not affiliated with or endorsed by The Bluebook, Zotero, or perma.cc.
